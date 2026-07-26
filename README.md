@@ -2,7 +2,7 @@
 
 A premium, local-first academic and learning management Progressive Web App — a personal academic operating system for organizing courses, units, materials, tasks, weekly schedule, attendance, grades, practice performance, analytics, and semester exports.
 
-**Status:** Stage 0 (specification & architecture) complete, pending review. No application code exists yet by design — see [docs/ROADMAP.md](./docs/ROADMAP.md).
+**Status:** Stage 0 (specification & architecture) reviewed and finalized by the product owner. No application code exists yet by design — see [docs/ROADMAP.md](./docs/ROADMAP.md). Stage 1 has not started.
 
 ## Start Here
 
@@ -19,11 +19,12 @@ This repository is documentation-first. Before writing any code, read:
 ## Principles
 
 - **Local-first**: no accounts, no mandatory backend, no mandatory cloud database. Academic data lives on the user's device.
-- **Flexible, not university-only**: courses can be university lectures, YouTube series, or self-study — modeled via tags, not a rigid type system.
+- **Flexible, not university-only**: courses can be university lectures, YouTube series, or self-study — modeled via a global, persistent set of tags, not a rigid type system.
 - **Grades vs. practice, always separate**: official academic grades are never conflated with practice/study performance.
 - **Correlation, not causation**: analytics describe patterns in the user's own data; they never claim a behavior *caused* an outcome.
 - **Export and delete are independent**: exporting a semester never deletes it; clearing a semester never happens as a side effect of exporting.
+- **Full history, not just current state**: e.g. task completion is tracked as a full event log, not a single overwritable timestamp, so analytics and exports remain accurate.
 
 ## License
 
-Not yet decided — see the open questions in [docs/STAGE_0_REPORT.md](./docs/STAGE_0_REPORT.md).
+[MIT](./LICENSE).

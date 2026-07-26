@@ -8,9 +8,13 @@ This is a **static, backend-less SPA**: the deployed artifact is HTML/CSS/JS ser
 
 ## 1. Cross-Site Scripting (XSS)
 
-- Never use `dangerouslySetInnerHTML` (or equivalent) for user-entered text (notes, descriptions, block content). React's default JSX text rendering escapes content — this is the baseline and must not be bypassed.
-- If rich text/markdown is ever added to text content blocks (open UX question, deferred to Stage 1/3), it must go through a safe markdown renderer plus an HTML sanitizer (e.g. DOMPurify) before anything resembling raw HTML touches the DOM — not implemented until that need is real.
-- User-entered strings that end up as `href`/`src` (e.g. a pasted link in a course description) must be scheme-validated (`http:`/`https:` only) before being rendered as a clickable link — `javascript:` and other dangerous schemes are rejected.
+- Never use `dangerouslySetInnerHTML` (or equivalent) for plain user-entered text (course/unit descriptions, labels). React's default JSX text rendering escapes content — this is the baseline and must not be bypassed.
+- **Rich text in Text content blocks (approved direction — PRODUCT_SPEC.md §5):** Text blocks store Markdown-style source supporting headings, bold/italic, lists, links, and inline/code blocks. This is the one place in the app where formatted content is rendered from user input, and it must never become an XSS vector:
+  - Render via **parse-then-sanitize**: a Markdown parser turns the source into a restricted node/element set, and the result is either (a) rendered through a component-based renderer that never touches `innerHTML` (a React-Markdown-style renderer mapping AST nodes to React elements is the safest shape), or (b) if any HTML-string step is ever used, passed through an HTML sanitizer (e.g. DOMPurify) with a strict allow-list before it touches the DOM.
+  - Raw HTML embedded in a note's Markdown source (e.g. `<script>`, `<iframe>`, `onerror=` attributes) must never execute — it is stripped or rendered as inert escaped text, never passed through.
+  - Links produced by the Markdown renderer are still subject to the scheme-validation rule below (`http:`/`https:` only).
+  - No specific Markdown/editor library is chosen in Stage 0 — this is a Stage 3 implementation decision, constrained by the safety requirements above.
+- User-entered strings that end up as `href`/`src` (e.g. a pasted link in a course description, or a link inside a rich-text note) must be scheme-validated (`http:`/`https:` only) before being rendered as a clickable link — `javascript:` and other dangerous schemes are rejected.
 
 ## 2. File & Blob Handling
 
@@ -69,7 +73,7 @@ There are no backend secrets in this architecture — the app is 100% static and
 
 - All academic and self-reported data (courses, grades, tasks, schedule, attendance, check-ins) is local-only by default; nothing is transmitted anywhere, because there is no server for it to go to.
 - No tracking/behavioral analytics SDK is included. "Analytics" in this product means computing statistics over the user's own academic data, locally, for their own benefit — not telemetry about the user sent to a third party (see PRODUCT_SPEC.md §13, §25 of the original brief).
-- The static hosting provider (Netlify or equivalent, see ARCHITECTURE.md) only ever serves the static app bundle; it has no access to IndexedDB contents, which never leave the browser.
+- The static hosting provider (Netlify — approved, see ARCHITECTURE.md) only ever serves the static app bundle; it has no access to IndexedDB contents, which never leave the browser.
 - If any future feature would change this (e.g. optional cloud sync, opt-in crash reporting), it requires explicit product-owner approval and must be clearly disclosed and opt-in — not a default.
 
 ## Accessibility Note (cross-referenced from engineering quality goals)

@@ -4,6 +4,18 @@ All notable changes to this project are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-07-26
+### Fixed
+- `docs/DATA_MODEL.md`: `TaskCompletionEvent` is now part of the planned v1 Dexie schema (Stage 2), not a deferred future addition — a single `Task.completedAt` timestamp cannot represent a task toggled Incomplete → Complete → Incomplete → Complete, and analytics/export require the full transition history.
+
+### Added
+- `LICENSE` (MIT).
+- Resolved product decisions, documented across `docs/PRODUCT_SPEC.md`, `docs/DATA_MODEL.md`, `docs/ARCHITECTURE.md`, `docs/SECURITY.md`, and `docs/ROADMAP.md`: Tags are a global/persistent taxonomy (not semester-scoped); Netlify is the approved production host; historical semesters are export-only in v1 (no in-app multi-semester browser); Text content blocks support safe Markdown-style rich formatting (parse-then-sanitize, never raw HTML); default Unit Type suggestions approved and explicitly distinguished from Schedule Event Types; repository is public under the `academic-os` name with an MIT license.
+- `docs/DEVELOPMENT.md`: repo-local Git identity confirmed and documented; branch renamed from `master` to `main` to match the documented Git workflow.
+
+### Changed
+- `docs/STAGE_0_REPORT.md` and `docs/ROADMAP.md`: Stage 0 status updated from "pending review" to "reviewed and finalized."
+
 ## [0.1.0] - 2026-07-26
 ### Added
 - Stage 0: product specification (`docs/PRODUCT_SPEC.md`).

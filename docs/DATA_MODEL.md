@@ -6,12 +6,19 @@
 
 ## Storage Architecture
 
-Two separate IndexedDB databases via Dexie, deliberately kept apart so a destructive semester reset can never touch preferences:
+Two separate IndexedDB databases via Dexie, deliberately kept apart so a destructive semester reset can never touch preferences or the user's global tag taxonomy:
 
-1. **`academic-os-preferences`** — app-level settings that must survive "New Semester": theme, notification preferences, last-export reminders, onboarding flags. Tiny, long-lived, never bulk-deleted.
-2. **`academic-os-semester`** — the single active semester workspace: Semester, Tag, Course, Unit, ContentBlock, Blob, Task, ScheduleTemplate, ScheduleOccurrence, GradeCategory, GradeEntry, GradeBoundary, PracticeEntry, WeeklyCheckIn. "Start New Semester" deletes/recreates this entire database; `academic-os-preferences` is untouched.
+1. **`academic-os-preferences`** — app-level **persistent** data that must survive "New Semester": AppPreferences (theme, notification preferences, last-export reminders, onboarding flags) **and the global `Tag` table** (see §Tag below — resolved: Tags are a global, cross-semester taxonomy, not semester-scoped). Small, long-lived, never bulk-deleted by a semester reset.
+2. **`academic-os-semester`** — the single active semester workspace: Semester, Course, Unit, ContentBlock, Blob, Task, TaskCompletionEvent, ScheduleTemplate, ScheduleOccurrence, GradeCategory, GradeEntry, GradeBoundary, PracticeEntry, WeeklyCheckIn. "Start New Semester" deletes/recreates this entire database; `academic-os-preferences` (including Tag definitions) is untouched.
 
-The app operates on **one active semester at a time** (per product spec §15) — there is no in-app multi-semester browsing in v1. History beyond the active semester is preserved by explicit export (§16), not by retaining every past semester's rows inside the live database indefinitely. (Whether to later support in-app historical browsing of past exported semesters is an open question — see STAGE_0_REPORT.md.)
+The app operates on **one active semester at a time** (per product spec §15) — there is no in-app multi-semester browsing in v1. This is a **resolved v1 scope decision**, not an open question: history beyond the active semester is preserved *exclusively* by explicit Semester Export (§16); there is no in-app historical-semester browser, and Import (future) is the only path that brings a historical archive's data back into the single active workspace.
+
+### Cross-database references are not enforceable at the database layer
+
+Because Tag now lives in a *different* IndexedDB database than Course, a `Course.tagIds[]` entry is a **cross-database reference**. Dexie/IndexedDB cannot enforce foreign keys — or even query/join — across two separate databases. This is handled entirely at the application/repository layer:
+
+- Resolving a course's tags for display means two separate queries (read `Course.tagIds`, then read matching rows from the `Tag` table in the preferences database) joined in application code — never a database-level join.
+- If a `tagId` no longer resolves to an existing `Tag` row (e.g. the global tag was deleted from Settings), the association is treated as **stale and silently filtered out at read time**, not as an error — consistent with the defensive-read principle in SECURITY.md §10. No destructive cascade is triggered across databases just because a tag was deleted.
 
 ### Why IndexedDB (not `localStorage`)
 
@@ -32,19 +39,25 @@ The app operates on **one active semester at a time** (per product spec §15) �
 ## Entity Overview
 
 ```
-AppPreferences (own DB)
-
-Semester 1─* Tag
-Semester 1─* Course *─* Tag
-Course 1─* Unit
-Unit 1─* ContentBlock ──(file/image/video blocks reference)──> Blob
-Unit 1─* Task            Course 1─* Task (task may attach to a Unit, or stand alone under a Course, or be fully standalone)
-Course 1─* ScheduleTemplate 1─* ScheduleOccurrence
-Course 1─* GradeCategory (self-referencing parent for nesting)
-Course 1─* GradeEntry (*─1 GradeCategory, optional)
-Course 1─* GradeBoundary
-Unit  1─* PracticeEntry
-Semester 1─* WeeklyCheckIn
+academic-os-preferences DB:
+  AppPreferences (singleton)
+  Tag (global, persists across semesters)
+        ┊
+        ┊  Course.tagIds[] — cross-database reference,
+        ┊  resolved in application code, not a DB-level join
+        ┊
+academic-os-semester DB:
+  Semester 1─* Course *┈* Tag  (association only; Tag itself lives in the other DB)
+  Course 1─* Unit
+  Unit 1─* ContentBlock ──(file/image/video blocks reference)──> Blob
+  Unit 1─* Task            Course 1─* Task (task may attach to a Unit, or stand alone under a Course, or be fully standalone)
+  Task  1─* TaskCompletionEvent (append-only history log)
+  Course 1─* ScheduleTemplate 1─* ScheduleOccurrence
+  Course 1─* GradeCategory (self-referencing parent for nesting)
+  Course 1─* GradeEntry (*─1 GradeCategory, optional)
+  Course 1─* GradeBoundary
+  Unit  1─* PracticeEntry
+  Semester 1─* WeeklyCheckIn
 ```
 
 ## Entities
@@ -57,6 +70,8 @@ Semester 1─* WeeklyCheckIn
 | hasCompletedOnboarding | bool |
 | lastExportReminderAt | drives a future "you haven't exported in a while" nudge |
 
+`Tag` (below) is a separate table in this same `academic-os-preferences` database — it is not a field on this singleton, just co-located with it because both must survive a semester reset.
+
 ### Semester
 | Field | Notes |
 |---|---|
@@ -66,13 +81,15 @@ Semester 1─* WeeklyCheckIn
 | startDate?, endDate? | optional |
 | createdAt, updatedAt | |
 
-### Tag
+### Tag — **global, persistent taxonomy (`academic-os-preferences` DB)** — resolved
 | Field | Notes |
 |---|---|
 | id, name, color | required minimum per spec §2 |
 | createdAt, updatedAt | |
 
-Tags attach to Courses via a join table/array of ids (`Course.tagIds`). **Open question**: whether tags should persist as a personal taxonomy across semesters (global) or reset per semester workspace (current default — see STAGE_0_REPORT.md).
+**Resolved decision (was previously an open question):** Tags are a global, application-level personal taxonomy, not scoped to a semester. A Tag definition (e.g. `ZC`, `University`, `AI`) is created once and is available and reusable across every semester; the user never has to recreate it. Tags therefore live in the `academic-os-preferences` database, alongside `AppPreferences`, specifically so "Start New Semester" cannot delete them.
+
+Courses reference Tags via `Course.tagIds[]`, which lives in the *semester* database (`academic-os-semester`) because the association is per-course, and Courses are semester-scoped. **The association is course-specific and semester-scoped; the Tag definition itself is not.** When a semester is cleared, its Courses (and therefore their `tagIds` associations) are deleted along with the rest of the semester workspace, but the global `Tag` rows in `academic-os-preferences` are never touched. See "Cross-database references are not enforceable at the database layer" above for how this association is resolved without a DB-level foreign key.
 
 ### Course
 | Field | Notes |
@@ -91,14 +108,14 @@ Tags attach to Courses via a join table/array of ids (`Course.tagIds`). **Open q
 |---|---|
 | id, courseId | |
 | title | |
-| type | free string; UI offers a default suggested list (Lecture, Tutorial, Section, Lab, Video, Chapter, Assignment, Workshop) plus custom |
+| type | free string; UI offers a default suggested list (**approved**: Lecture, Tutorial, Section, Lab, Video, Chapter, Assignment, Workshop) plus custom — never a closed enum. Independent from `ScheduleTemplate.type` (schedule event types) even though the two lists share overlapping vocabulary — see PRODUCT_SPEC.md §7 note. |
 | order | |
 | createdAt, updatedAt | |
 
 ### ContentBlock (discriminated union on `type`)
 | Common fields | title (user-facing, independent of file name), unitId, order, createdAt, updatedAt |
 |---|---|
-| `type: "text"` | `content: string` |
+| `type: "text"` | `content: string` — **approved direction:** Markdown-flavored source text supporting headings, bold/italic, lists, links, and inline/code blocks, not plain text only. The stored value is always the raw Markdown-style source; rendering always goes through a safe parse-and-sanitize step (never raw HTML passthrough) — see SECURITY.md §1. No specific parser/editor library is chosen in Stage 0; that is a Stage 3 implementation decision constrained by this safety requirement. |
 | `type: "file"` | `blobId`, `originalFileName`, `mimeType`, `sizeBytes` |
 | `type: "image"` | `blobId`, `originalFileName`, `mimeType`, `sizeBytes` |
 | `type: "video"` | `blobId`, `originalFileName`, `mimeType`, `sizeBytes` |
@@ -123,10 +140,32 @@ Kept in its own table so metadata-only queries (rendering a unit's block list) n
 | unitId? | optional — a task may be unit-scoped, course-scoped-but-not-unit-scoped, or fully standalone |
 | title | |
 | dueDate? | drives Overdue/Today/Upcoming grouping via the shared academic-week/day utility |
-| completed: boolean, completedAt? | |
+| completed: boolean | current state — cheap to query for list rendering |
+| completedAt? | see semantics below |
 | createdAt, updatedAt | |
 
-A lightweight `TaskCompletionEvent` log (taskId, toggledTo, at) is a documented **future-compatible addition** (new table, no migration pain) if analytics ever need full completion history beyond current state + timestamp; not required for v1 since `completed` + `completedAt` already answers "was it done and when."
+### TaskCompletionEvent — **part of the v1 data model, in the initial Dexie schema (Stage 2)**, not deferred
+
+`Task.completed` + `Task.completedAt` alone cannot represent a task that is toggled **Incomplete → Complete → Incomplete → Complete**: a single `completedAt` timestamp loses every transition but the latest. Because PRODUCT_SPEC.md §6/§13 require true historical completion data for analytics (e.g. "was this task completed on time" across a semester) and §16 requires the semester export to preserve raw analytics source data, an append-only event log is required from the start, not added later.
+
+| Field | Notes |
+|---|---|
+| id | |
+| taskId | references `Task` |
+| toggledTo: boolean | `true` = this event marks the task complete; `false` = this event marks it incomplete again |
+| at | timestamp of this specific transition |
+
+**Semantics (must stay consistent wherever Task completion is read or written):**
+- Every toggle, in either direction, appends a new `TaskCompletionEvent` row. The log is append-only — existing events are never edited or deleted except via the cascade rule below.
+- `Task.completed` and `Task.completedAt` are **derived convenience fields for current-state queries only** (e.g. rendering today's task list without scanning history):
+  - When a task is toggled to complete, `Task.completed = true` and `Task.completedAt` is set to that event's `at`.
+  - When a task is toggled back to incomplete, `Task.completed = false` and `Task.completedAt` becomes `null`/`undefined` — it does **not** retain the previous completion timestamp.
+  - The full history of every transition (including ones now "overwritten" on the `Task` row) remains permanently available via `TaskCompletionEvent`, which is the actual source of truth for analytics and export, not the denormalized fields on `Task`.
+- Writing a completion toggle updates `Task` and inserts the `TaskCompletionEvent` row inside a single Dexie transaction (see §"Atomicity & migrations"), so the two are never out of sync.
+
+**Deletion behavior:** deleting a `Task` cascades to delete its `TaskCompletionEvent` rows, consistent with the existing Course/Unit → Task cascade-delete rule (see "Referential Integrity & Deletion Rules" below) — the event log is scoped to the lifetime of a task that still exists; there is no dangling-event use case since a deleted task cannot be shown or analyzed anymore.
+
+**Export behavior:** Semester Export (§16 of the product spec) **must** include full `TaskCompletionEvent` history for every task present in the semester at export time, precisely because it is raw analytics source data that a future app version needs to recompute completion-based insights (e.g. "completed on time" rates) — see "Archive Schema" below.
 
 ### ScheduleTemplate vs. ScheduleOccurrence
 
@@ -183,7 +222,7 @@ This is the model called out explicitly in product spec §8 and requires care:
 
 ## Analytics Data Philosophy
 
-No table in this model stores a *final computed* analytic (e.g. "semester GPA") as its source of truth. Every number the analytics stage will show is derivable from the raw tables above (GradeEntry, PracticeEntry, ScheduleOccurrence, Task). This is deliberate: it lets future app versions improve or fix an analytics formula and have it apply retroactively to historical data, and it is exactly what makes the semester archive (§ below) useful for re-analysis after import.
+No table in this model stores a *final computed* analytic (e.g. "semester GPA") as its source of truth. Every number the analytics stage will show is derivable from the raw tables above (GradeEntry, PracticeEntry, ScheduleOccurrence, Task, TaskCompletionEvent). This is deliberate: it lets future app versions improve or fix an analytics formula and have it apply retroactively to historical data, and it is exactly what makes the semester archive (§ below) useful for re-analysis after import.
 
 ## Archive Schema (Semester Export)
 
@@ -200,6 +239,7 @@ A versioned envelope, e.g.:
   "units": [...],
   "contentBlockMetadata": [...],
   "tasks": [...],
+  "taskCompletionEvents": [...],
   "scheduleTemplates": [...],
   "scheduleOccurrences": [...],
   "gradeCategories": [...],
@@ -212,11 +252,16 @@ A versioned envelope, e.g.:
 
 - `archiveVersion` is an integer bumped on any breaking shape change; the importer dispatches on it and can run migration steps for older versions (see SECURITY.md §"Import Threat Model" for validation/rejection rules).
 - `contentBlockMetadata` includes block titles/types/ordering but **not** blob binary data by default (product spec §16) — large originals are excluded from this archive.
+- `tags` is a **snapshot** of the global `Tag` definitions actually referenced by this semester's courses at export time (id, name, color) — even though Tags are now global/persistent app data (see §Tag above), the archive embeds the definitions it depends on so the export remains self-contained and reconstructable even if the global Tag table later changes or the archive is opened by a different install.
+- `taskCompletionEvents` is the full append-only completion-history log for every task in the semester — included precisely because it is raw analytics source data, per the approved decision that Semester Export must preserve `TaskCompletionEvent` history, not just current `Task.completed` state.
 - The media export (§17 of the product spec) is a separate, optional zip keyed by personal-image blobs specifically, organized by Course/Unit folder names, and is versioned independently since it can evolve on its own schedule.
 
 ## Referential Integrity & Deletion Rules (to formalize in Stage 2/3)
 
-- Deleting a Course cascades to its Units, ContentBlocks (and their Blobs), Tasks, ScheduleTemplates (and their Occurrences), GradeCategories/Entries/Boundaries, and PracticeEntries — all scoped to that course.
-- Deleting a Unit cascades to its ContentBlocks/Blobs, unit-scoped Tasks, and PracticeEntries; course-level Tasks/PracticeEntries (not tied to that unit) are unaffected.
+- Deleting a Course cascades to its Units, ContentBlocks (and their Blobs), Tasks (and their TaskCompletionEvents), ScheduleTemplates (and their Occurrences), GradeCategories/Entries/Boundaries, and PracticeEntries — all scoped to that course. The Course's `tagIds[]` association simply disappears with it; the referenced global `Tag` rows (a different database) are never touched.
+- Deleting a Unit cascades to its ContentBlocks/Blobs, unit-scoped Tasks (and their TaskCompletionEvents), and PracticeEntries; course-level Tasks/PracticeEntries (not tied to that unit) are unaffected.
+- Deleting a Task cascades to delete its `TaskCompletionEvent` rows — the event log only has meaning for a task that still exists; see §TaskCompletionEvent above.
 - Deleting a ScheduleTemplate does **not** delete existing ScheduleOccurrences (they retain their denormalized snapshot and remain valid historical attendance records); it only stops generating future occurrences.
+- Deleting a global `Tag` (from Settings, an application-level operation, not a semester operation) does **not** cascade-delete anything in the semester database; any `Course.tagIds` entries that now point to a nonexistent Tag are treated as stale and filtered out at read time (see "Cross-database references are not enforceable at the database layer" above) — no cross-database cascade is performed.
+- "Start New Semester" deletes/recreates the entire `academic-os-semester` database (Semester, Course, Unit, ContentBlock, Blob, Task, TaskCompletionEvent, ScheduleTemplate, ScheduleOccurrence, GradeCategory, GradeEntry, GradeBoundary, PracticeEntry, WeeklyCheckIn — everything above) but never touches `academic-os-preferences` (AppPreferences and the global Tag table survive unchanged).
 - IDs are stable, generated client-side (e.g. UUID/ULID) at creation time and never reused — this matters for export/import round-tripping and for occurrence snapshots referencing a template that may later be deleted.

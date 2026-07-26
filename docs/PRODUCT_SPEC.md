@@ -20,8 +20,8 @@ Courses are the top-level learning containers. Units are logical sub-divisions o
 
 These are two independent concepts and must never be merged into one field or enum:
 
-- **Tags** are free-form, user-defined, colored labels attached to **Courses** (many-to-many). Examples: `ZC`, `University`, `YouTube`, `Self Study`, `AI`, `Semester 2`. A Tag has at minimum a **name** and a **color**. Tags are how the product models "kind of course" flexibly instead of hard-coding mutually exclusive course types (e.g. no hard-coded `University Course` vs `YouTube Course` type flag).
-- **Unit Types** describe the pedagogical role of a single **Unit** inside a course (Lecture, Tutorial, Section, Lab, Video, Chapter, Assignment, Workshop, or a user-defined custom type). Unit types are not colored labels and are not attached to Courses.
+- **Tags** are free-form, user-defined, colored labels attached to **Courses** (many-to-many). Examples: `ZC`, `University`, `YouTube`, `Self Study`, `AI`, `Semester 2`. A Tag has at minimum a **name** and a **color**. Tags are how the product models "kind of course" flexibly instead of hard-coding mutually exclusive course types (e.g. no hard-coded `University Course` vs `YouTube Course` type flag). **Resolved: Tags are a global, persistent personal taxonomy.** Once a Tag is created it is available and reusable across every semester — the user never has to recreate `University`, `AI`, `ZC`, etc. each time they start a new semester. Only a course's specific *association* with a tag is semester-scoped (it disappears when that course is removed, e.g. by "Start New Semester"); the Tag definition itself is not deleted. See DATA_MODEL.md §Tag for the persistence mechanics.
+- **Unit Types** describe the pedagogical role of a single **Unit** inside a course (Lecture, Tutorial, Section, Lab, Video, Chapter, Assignment, Workshop, or a user-defined custom type — see §4). Unit types are not colored labels and are not attached to Courses.
 
 ## 3. Course Model
 
@@ -35,9 +35,15 @@ Course code is intentionally optional — many non-university learning sources h
 
 A Course contains an ordered list of Units. A Unit has: title, type (from a default suggested set, or custom), course relationship, ordering information, created/updated timestamps. Users are never forced into one fixed unit taxonomy — the default type list is a convenience, not a constraint.
 
+**Approved default Unit Type suggestions:** Lecture, Tutorial, Section, Lab, Video, Chapter, Assignment, Workshop. These are convenience defaults offered in the UI, never a closed enum — custom user-defined unit types must always remain fully supported alongside them.
+
+**Not to be confused with Schedule Event Types (§7):** the weekly schedule's event types happen to share overlapping default vocabulary (Lecture, Tutorial, Lab) because both describe similar academic concepts, but `Unit.type` and `ScheduleTemplate.type` (see DATA_MODEL.md) are independent fields on independent entities. Setting a Unit's type never sets or implies a matching schedule event type, and vice versa — a user could have a "Lab" Unit in a course with no corresponding "Lab" schedule entry at all, or a differently-typed one.
+
 ## 5. Content Block System
 
 Inside a Unit, the user assembles Content Blocks. Initial block concepts: **Text**, **File**, **Image**, **Video**. Every block has a user-facing title that is independent of any underlying original file name (e.g. a block titled "Lecture Slides" may wrap a file literally named `w4_v3_final_FINAL.pdf`).
+
+**Approved: Text blocks support safe rich formatting, not plain text only.** Text content blocks use a Markdown-style/safe structured rich-text approach supporting at minimum: headings, bold, italic, lists, links, and inline/code blocks. Raw HTML is never executed — see SECURITY.md §1 for the required parse-then-sanitize rendering approach. No specific editor/parser library is chosen at this stage; that is a Stage 3 implementation decision, constrained by this safety requirement. Stage 1's UI/UX design must account for both editing and viewing formatted notes, not a plain textarea.
 
 Content blocks must eventually support create, edit (where the block type allows it), delete, and reorder. Stage 0 documents this architecture only (see DATA_MODEL.md §ContentBlock and ARCHITECTURE.md §Extensibility); it is not implemented until Stage 3.
 
@@ -53,7 +59,7 @@ The application's week runs **Saturday 00:00:00 local time → Friday 23:59:59.9
 
 ### Task presentation
 
-Tasks are grouped as: **Overdue**, **Today**, then **Upcoming** days in chronological order. Tasks support completion (done/not done). The data model must retain historical completion data (not just current state) so future analytics can answer questions like "what fraction of tasks were completed on time this semester."
+Tasks are grouped as: **Overdue**, **Today**, then **Upcoming** days in chronological order. Tasks support completion (done/not done), and a task may be toggled between complete and incomplete multiple times over its life (e.g. Incomplete → Complete → Incomplete → Complete). The data model must retain **every** such transition, not just the current state and a single timestamp — a single "completed at" value is not sufficient once a task can be un-completed and re-completed, since it would silently lose earlier transitions. This full history is what lets future analytics answer questions like "what fraction of tasks were completed on time this semester" correctly even for tasks that were toggled back and forth. See DATA_MODEL.md §TaskCompletionEvent for the mechanism.
 
 ## 7. Weekly Schedule
 
@@ -62,6 +68,8 @@ A recurring weekly schedule of Schedule Entries (Lecture, Tutorial, Section, Lab
 Example: `CSAI 101 — Lecture — Saturday 09:00–10:30 — Room C201`.
 
 Stage 0 documents the data model only; day/week calendar UI is a later stage.
+
+**Schedule Event Types are independent from Unit Types (§4)**, even though both offer overlapping default labels (Lecture, Tutorial, Lab, etc.), because they describe different things: a Schedule Event Type describes a recurring calendar entry, while a Unit Type describes a piece of course content organization. They are separate fields on separate entities and are never merged or inferred from one another.
 
 ## 8. Attendance
 
@@ -108,11 +116,13 @@ A lightweight, entirely optional self-reported weekly check-in: energy, focus, s
 
 The app operates on **one active semester workspace** at a time. Initial setup captures: academic year/study year, semester number/name, optional start date, optional end date (e.g. "Year 2, Semester 1"). The active semester holds the current working data. Keeping every historical semester permanently inside the live workspace is not required — history is preserved via export (§16), not by indefinite in-app accumulation.
 
+**Resolved v1 scope:** only the *active* semester is browsable inside the application. There is no in-app multi-semester history browser in v1 — past semesters are preserved exclusively through explicit Semester Export (§16), and bringing a historical archive's data back into the app is exclusively the future Import workflow (§18), not a parallel "view old semester" feature. This keeps the active workspace's data model simple (no need to page between semesters) and is not an open question.
+
 ## 16. Semester Export
 
 Manual, explicit semester export. **Export and Clear/New-Semester (§19) are completely independent operations — export must never delete or reset data, and clearing must never be a side effect of exporting.**
 
-The archive preserves structured data needed to reconstruct and analyze the semester: semester metadata, courses, tags, units, content *metadata* (not necessarily the original large files — see below), tasks and completion history, schedule information/history, attendance, official grades, practice scores, weekly check-ins, relevant timestamps, and analytics source data. Prefer raw structured data over rendered analytics so future app versions can recompute better insights.
+The archive preserves structured data needed to reconstruct and analyze the semester: semester metadata, courses, a snapshot of the tags referenced by those courses, units, content *metadata* (not necessarily the original large files — see below), tasks **and their full completion-event history (not just current status)**, schedule information/history, attendance, official grades, practice scores, weekly check-ins, relevant timestamps, and analytics source data. Prefer raw structured data over rendered analytics so future app versions can recompute better insights.
 
 Large original course materials (lecture PDFs/videos) are **not** included in this archive by default — see §17 for personal media. The archive format is versioned (see DATA_MODEL.md §"Archive Schema").
 
@@ -137,7 +147,7 @@ Semester archives must eventually be importable. Import is treated as **untruste
 
 ## 19. New Semester / Clear Data
 
-A separate, deliberately destructive action, independent of export (§16) and import (§18). Future UX: user chooses "Start New Semester" → clear warning → explicit confirmation (e.g. typed confirmation phrase) → delete the current semester workspace → **preserve application-level preferences** (theme, notification settings, etc.) → return to semester setup. There is no automatic "export then delete" chaining — the user decides both actions independently.
+A separate, deliberately destructive action, independent of export (§16) and import (§18). Future UX: user chooses "Start New Semester" → clear warning → explicit confirmation (e.g. typed confirmation phrase) → delete the current semester workspace (its courses, and therefore those courses' tag associations) → **preserve application-level persistent data** (theme, notification settings, and the global Tag taxonomy from §2 — tag *definitions* are never deleted by this action) → return to semester setup. There is no automatic "export then delete" chaining — the user decides both actions independently.
 
 ## 20. Local-First Requirement
 
@@ -158,7 +168,7 @@ Stage 0 does **not** design or build UI. A dedicated Stage 1 (UI/UX + Figma) pre
 - Course list (with tag filters)
 - Course detail (units list, tags, code/instructor/description)
 - Unit detail (content blocks, tasks, practice performance)
-- Content block viewer/editor per type (text, file, image, video)
+- Content block viewer/editor per type (text — rich/Markdown-style formatting, not plain text; file; image; video)
 - Weekly schedule (week view)
 - Attendance marking per schedule occurrence
 - Grades — course grade view (simple vs. structured mode), category breakdown
@@ -171,7 +181,7 @@ Stage 0 does **not** design or build UI. A dedicated Stage 1 (UI/UX + Figma) pre
 ## Cross-Cutting Invariants (must never regress)
 
 1. Course code is never mandatory.
-2. Tags (Course-level, name+color) and Unit Types (Unit-level) are never the same field.
+2. Tags (Course-level, name+color) and Unit Types (Unit-level) are never the same field. Unit Types and Schedule Event Types are likewise never the same field, despite sharing default vocabulary.
 3. Official Grades and Practice Performance are always structurally separate.
 4. Export never deletes; Clear/New Semester never happens implicitly.
 5. The academic week is always Saturday 00:00:00 → Friday 23:59:59.999 local time, computed by one shared utility.
@@ -179,3 +189,6 @@ Stage 0 does **not** design or build UI. A dedicated Stage 1 (UI/UX + Figma) pre
 7. No account/login/mandatory backend is introduced for core functionality.
 8. Analytics language never claims causation from correlation.
 9. Weekly check-in data is never framed as medical/psychological diagnosis.
+10. Tags are a global, persistent taxonomy that survives "Start New Semester"; only a course's tag *association* is semester-scoped.
+11. Task completion history is preserved as a full transition log (not just current state + one timestamp), and is included in Semester Export.
+12. Rich text in Text content blocks is always rendered through a safe parse-and-sanitize path — raw HTML is never executed.

@@ -2,17 +2,17 @@
 
 > Staged implementation plan. Each stage should end with a short report (as this one does — see [STAGE_0_REPORT.md](./STAGE_0_REPORT.md)) documenting what shipped, decisions made, and what's deferred. Stages are not collapsed into one another; each stage's deliverables should be genuinely reviewable before the next begins.
 
-## Stage 0 — Specification & Architecture *(this stage)*
-Product specification, technical architecture, conceptual data model, storage/PWA/security/testing strategy, documentation structure, Git repository initialization. No feature code, no UI, no backend. **Status: complete, pending product-owner review.**
+## Stage 0 — Specification & Architecture
+Product specification, technical architecture, conceptual data model, storage/PWA/security/testing strategy, documentation structure, Git repository initialization. No feature code, no UI, no backend. **Status: reviewed and finalized/approved by the product owner** (see docs/STAGE_0_REPORT.md). Stage 1 has not started.
 
 ## Stage 1 — UI/UX & Figma
 Information architecture, user flows, and visual design for the screens listed in PRODUCT_SPEC.md §22, built in Figma against the entities and constraints defined in Stage 0. No production code changes expected beyond possibly a design-token/theming decision that Stage 2 will consume.
 
 ## Stage 2 — Engineering Foundation, Local Storage, PWA & Deployment Foundation
-Actual project scaffold: `package.json`, Vite + React + TypeScript setup, ESLint/Prettier, Dexie schema (v1) implementing DATA_MODEL.md, `vite-plugin-pwa` manifest/service-worker wiring, CI (GitHub Actions: typecheck/lint/test/build), and first deployment to the chosen static host with the production URL established. This is where ARCHITECTURE.md's decisions become real code and configuration.
+Actual project scaffold: `package.json`, Vite + React + TypeScript setup, ESLint/Prettier, Dexie schema (v1) implementing DATA_MODEL.md — including the `academic-os-preferences`/`academic-os-semester` database split and the `TaskCompletionEvent` log from day one — `vite-plugin-pwa` manifest/service-worker wiring, CI (GitHub Actions: typecheck/lint/test/build), and first deployment to Netlify (approved host) with the production URL established. This is where ARCHITECTURE.md's decisions become real code and configuration.
 
 ## Stage 3 — Courses, Units & Content Blocks
-Full CRUD for Courses, Tags, Units, and Content Blocks (text/file/image/video), including reordering, per PRODUCT_SPEC.md §2–5. Built against the Stage 1 design.
+Full CRUD for Courses, global Tags and their per-course associations, Units, and Content Blocks (rich-text/Markdown, file, image, video), including reordering, per PRODUCT_SPEC.md §2–5. Includes selecting and wiring the Markdown parser/sanitizer for Text blocks per the safety requirements in SECURITY.md §1. Built against the Stage 1 design.
 
 ## Stage 4 — Schedule, Tasks, Attendance & Notifications
 Weekly schedule (templates), the central Task system (Overdue/Today/Upcoming, using the shared academic-week utility), attendance marking against schedule occurrences, and the in-app-open notification baseline described in ARCHITECTURE.md §"Notifications — platform constraints."
