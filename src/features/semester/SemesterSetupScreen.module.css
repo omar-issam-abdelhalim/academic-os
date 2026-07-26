@@ -1,0 +1,65 @@
+.page {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6);
+  background: var(--color-bg-canvas);
+}
+
+.card {
+  width: 100%;
+  max-width: 420px;
+}
+
+.eyebrow {
+  font: var(--text-label-micro);
+  letter-spacing: var(--tracking-micro);
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+  margin-bottom: var(--space-2);
+}
+
+.title {
+  font: var(--text-display);
+  color: var(--color-text-primary);
+}
+
+.subtitle {
+  font: var(--text-body-default);
+  color: var(--color-text-secondary);
+  margin-top: var(--space-2);
+  margin-bottom: var(--space-6);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.dateRow {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.dateRow > * {
+  flex: 1;
+}
+
+.disclosure {
+  align-self: flex-start;
+  font: var(--text-body-small);
+  color: var(--color-action-primary);
+  min-height: 44px;
+}
+
+.formError {
+  font: var(--text-body-small);
+  color: var(--color-status-danger);
+}
+
+.submit {
+  margin-top: var(--space-2);
+  width: 100%;
+}

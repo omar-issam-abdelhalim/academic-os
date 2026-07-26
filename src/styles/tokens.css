@@ -1,0 +1,232 @@
+/**
+ * Design tokens — implements docs/STAGE_1B_DESIGN_SYSTEM.md §3-10.
+ *
+ * Light values are transcribed directly from the approved Stage 1B token
+ * table. Dark values follow Stage 1B's three given anchors (bg/canvas,
+ * action/primary, overlay/scrim) and re-tune the remaining tokens for AA
+ * contrast on a dark canvas — the full dark palette was not exported from
+ * Figma (Phase B was interrupted, see STAGE_1B_DESIGN_SYSTEM.md §0), so
+ * these are Stage 2 implementation-level color decisions within the
+ * approved token *architecture*, not a change to it. Tag hue pairs are
+ * likewise implementer-chosen exact hex values for the 9 named hues.
+ *
+ * Theme switching: `[data-theme="dark"]` / `[data-theme="light"]` on
+ * <html> wins when set (explicit user choice); otherwise the OS
+ * preference via `prefers-color-scheme` applies ("system", the default).
+ */
+
+:root {
+  /* --- Typography families (docs/STAGE_1B_DESIGN_SYSTEM.md §3) --- */
+  --font-serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --font-sans: "IBM Plex Sans", -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "IBM Plex Mono", "SF Mono", Menlo, Consolas, monospace;
+
+  /* --- Type ramp --- */
+  --text-display: 600 28px/36px var(--font-serif);
+  --text-heading-serif-h1: 600 22px/28px var(--font-serif);
+  --text-heading-h2: 600 20px/26px var(--font-sans);
+  --text-heading-h3: 600 17px/24px var(--font-sans);
+  --text-body-large: 400 16px/24px var(--font-sans);
+  --text-body-default: 400 15px/22px var(--font-sans);
+  --text-body-small: 400 13px/18px var(--font-sans);
+  --text-label-caption: 500 12px/16px var(--font-sans);
+  --text-label-micro: 500 11px/14px var(--font-sans);
+  --text-label-default: 500 13px/16px var(--font-sans);
+  --text-numeric-large: 500 24px/28px var(--font-mono);
+  --text-numeric-medium: 500 17px/22px var(--font-mono);
+  --text-numeric-small: 500 13px/16px var(--font-mono);
+  --text-button: 600 15px/20px var(--font-sans);
+  --tracking-micro: 0.04em;
+
+  /* --- Spacing (base unit 4px) --- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+
+  /* --- Radius --- */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-pill: 999px;
+
+  /* --- Elevation (flat by default; shadows reserved for true overlays) --- */
+  --elevation-popover: 0 4px 16px -4px rgb(20 19 15 / 18%), 0 1px 2px rgb(20 19 15 / 10%);
+  --elevation-sheet: 0 -8px 24px -6px rgb(20 19 15 / 20%);
+  --elevation-dialog: 0 16px 40px -12px rgb(20 19 15 / 28%);
+
+  /* --- Icon sizes --- */
+  --icon-sm: 16px;
+  --icon-md: 20px;
+  --icon-lg: 24px;
+  --icon-xl: 28px;
+
+  /* --- Motion --- */
+  --motion-fast: 120ms;
+  --motion-standard: 200ms;
+  --motion-deliberate: 320ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+
+  /* --- Breakpoints (reference only — media queries need literals; see
+     src/lib/breakpoints.ts for the JS-side source of truth) --- */
+  --breakpoint-tablet: 600px;
+  --breakpoint-desktop: 1024px;
+  --breakpoint-wide: 1440px;
+
+  color-scheme: light;
+
+  /* ============ Color — Light (default) ============ */
+  --color-bg-canvas: #fafaf7;
+  --color-bg-surface: #ffffff;
+  --color-bg-surface-raised: #ffffff;
+  --color-bg-sunken: #f2f1ed;
+  --color-border-default: #e4e2dc;
+  --color-border-strong: #cfccc3;
+  --color-text-primary: #201f1b;
+  --color-text-secondary: #5b5952;
+  --color-text-tertiary: #8b8880;
+  --color-text-disabled: #b7b4ab;
+  --color-text-inverse: #fafaf7;
+  --color-action-primary: #2b4c7e;
+  --color-action-primary-hover: #1f3a63;
+  --color-action-primary-pressed: #17304f;
+  --color-action-primary-subtle: #eaf0f8;
+  --color-status-success: #3f7857;
+  --color-status-success-subtle: #e8f3ec;
+  --color-status-warning: #9c6b1f;
+  --color-status-warning-subtle: #fbf1e1;
+  --color-status-danger: #a43e33;
+  --color-status-danger-subtle: #fbeae7;
+  --color-status-info: #3e6c8c;
+  --color-status-info-subtle: #e9f2f7;
+  --color-focus-ring: #2b4c7e;
+  --color-overlay-scrim: rgb(20 19 15 / 45%);
+
+  /* Tag / course color hues — chip background + paired foreground text */
+  --tag-slate-bg: #e4e7ec;
+  --tag-slate-fg: #45505e;
+  --tag-sage-bg: #e3eae1;
+  --tag-sage-fg: #46613f;
+  --tag-clay-bg: #f1e1d8;
+  --tag-clay-fg: #8a4a2e;
+  --tag-amber-bg: #f5e8c9;
+  --tag-amber-fg: #8c6a1e;
+  --tag-plum-bg: #ebe1ef;
+  --tag-plum-fg: #6b3f7a;
+  --tag-teal-bg: #ddedec;
+  --tag-teal-fg: #2c6f6a;
+  --tag-rose-bg: #f5e1e3;
+  --tag-rose-fg: #93475a;
+  --tag-olive-bg: #e9ead9;
+  --tag-olive-fg: #6a6e2e;
+  --tag-stone-bg: #e7e4de;
+  --tag-stone-fg: #6b6558;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --color-bg-canvas: #17181a;
+    --color-bg-surface: #1e2023;
+    --color-bg-surface-raised: #24272b;
+    --color-bg-sunken: #121314;
+    --color-border-default: #2e3136;
+    --color-border-strong: #43474d;
+    --color-text-primary: #f2f1ed;
+    --color-text-secondary: #b0aea6;
+    --color-text-tertiary: #86847c;
+    --color-text-disabled: #5c5a54;
+    --color-text-inverse: #14161a;
+    --color-action-primary: #6c93c7;
+    --color-action-primary-hover: #7ea1d1;
+    --color-action-primary-pressed: #5b84bb;
+    --color-action-primary-subtle: #22334a;
+    --color-status-success: #6fbe8d;
+    --color-status-success-subtle: #16261c;
+    --color-status-warning: #d9a343;
+    --color-status-warning-subtle: #2e2411;
+    --color-status-danger: #e2685a;
+    --color-status-danger-subtle: #341e1b;
+    --color-status-info: #7fb2d6;
+    --color-status-info-subtle: #182833;
+    --color-focus-ring: #6c93c7;
+    --color-overlay-scrim: rgb(0 0 0 / 60%);
+
+    --tag-slate-bg: #2a3038;
+    --tag-slate-fg: #aeb9c6;
+    --tag-sage-bg: #28312a;
+    --tag-sage-fg: #a9c4a0;
+    --tag-clay-bg: #3a2b22;
+    --tag-clay-fg: #e0a483;
+    --tag-amber-bg: #3a3018;
+    --tag-amber-fg: #e8c877;
+    --tag-plum-bg: #332638;
+    --tag-plum-fg: #d3a8e0;
+    --tag-teal-bg: #203331;
+    --tag-teal-fg: #8fd0c9;
+    --tag-rose-bg: #362327;
+    --tag-rose-fg: #e3a0ac;
+    --tag-olive-bg: #2e3020;
+    --tag-olive-fg: #c5cb8e;
+    --tag-stone-bg: #302e29;
+    --tag-stone-fg: #c7c0b3;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-bg-canvas: #17181a;
+  --color-bg-surface: #1e2023;
+  --color-bg-surface-raised: #24272b;
+  --color-bg-sunken: #121314;
+  --color-border-default: #2e3136;
+  --color-border-strong: #43474d;
+  --color-text-primary: #f2f1ed;
+  --color-text-secondary: #b0aea6;
+  --color-text-tertiary: #86847c;
+  --color-text-disabled: #5c5a54;
+  --color-text-inverse: #14161a;
+  --color-action-primary: #6c93c7;
+  --color-action-primary-hover: #7ea1d1;
+  --color-action-primary-pressed: #5b84bb;
+  --color-action-primary-subtle: #22334a;
+  --color-status-success: #6fbe8d;
+  --color-status-success-subtle: #16261c;
+  --color-status-warning: #d9a343;
+  --color-status-warning-subtle: #2e2411;
+  --color-status-danger: #e2685a;
+  --color-status-danger-subtle: #341e1b;
+  --color-status-info: #7fb2d6;
+  --color-status-info-subtle: #182833;
+  --color-focus-ring: #6c93c7;
+  --color-overlay-scrim: rgb(0 0 0 / 60%);
+
+  --tag-slate-bg: #2a3038;
+  --tag-slate-fg: #aeb9c6;
+  --tag-sage-bg: #28312a;
+  --tag-sage-fg: #a9c4a0;
+  --tag-clay-bg: #3a2b22;
+  --tag-clay-fg: #e0a483;
+  --tag-amber-bg: #3a3018;
+  --tag-amber-fg: #e8c877;
+  --tag-plum-bg: #332638;
+  --tag-plum-fg: #d3a8e0;
+  --tag-teal-bg: #203331;
+  --tag-teal-fg: #8fd0c9;
+  --tag-rose-bg: #362327;
+  --tag-rose-fg: #e3a0ac;
+  --tag-olive-bg: #2e3020;
+  --tag-olive-fg: #c5cb8e;
+  --tag-stone-bg: #302e29;
+  --tag-stone-fg: #c7c0b3;
+}

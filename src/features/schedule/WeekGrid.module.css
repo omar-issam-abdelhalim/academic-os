@@ -1,0 +1,123 @@
+.grid {
+  display: grid;
+  grid-template-columns: 56px repeat(7, 1fr);
+  gap: 0 var(--space-1);
+  overflow-x: auto;
+}
+
+.hourColumn {
+  display: flex;
+  flex-direction: column;
+}
+
+.headerSpacer {
+  height: 44px;
+}
+
+.hourLabel {
+  font: var(--text-numeric-small);
+  color: var(--color-text-tertiary);
+  transform: translateY(-7px);
+}
+
+.dayColumn {
+  min-width: 130px;
+  border-left: 1px solid var(--color-border-default);
+}
+
+.dayHeader {
+  height: 44px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font: var(--text-label-caption);
+  color: var(--color-text-secondary);
+}
+
+.today .dayHeader {
+  color: var(--color-action-primary);
+  font-weight: 600;
+}
+
+.dayNumber {
+  font: var(--text-numeric-small);
+}
+
+.track {
+  position: relative;
+}
+
+.hourLine {
+  border-top: 1px solid var(--color-border-default);
+}
+
+/* Compact overview only — status is a left-border color, not a badge,
+   since even a 1-hour cell can't reliably fit title+type+badge+buttons.
+   Click opens the detail dialog with the real, interactive
+   AttendanceControl (see WeekGrid.tsx). */
+.event {
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  background: var(--color-action-primary-subtle);
+  border-left: 3px solid var(--color-action-primary);
+  border-radius: var(--radius-xs);
+  padding: var(--space-1) var(--space-2);
+  overflow: hidden;
+  font-size: 12px;
+  text-align: left;
+  transition: filter var(--motion-fast) var(--ease-out);
+}
+
+.event:hover,
+.event:focus-visible {
+  filter: brightness(1.08);
+}
+
+.event.toneSuccess {
+  border-left-color: var(--color-status-success);
+}
+.event.toneDanger {
+  border-left-color: var(--color-status-danger);
+}
+.event.toneWarning {
+  border-left-color: var(--color-status-warning);
+}
+.event.toneInfo {
+  border-left-color: var(--color-status-info);
+}
+.event.toneNeutral {
+  border-left-color: var(--color-text-tertiary);
+}
+
+.eventTitle {
+  font: var(--text-label-caption);
+  color: var(--color-text-primary);
+}
+
+.eventType {
+  color: var(--color-text-secondary);
+}
+
+.detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.detailTime {
+  font: var(--text-numeric-medium);
+}
+
+.detailLocation {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font: var(--text-body-small);
+  color: var(--color-text-tertiary);
+}
+
+.detailControl {
+  margin-top: var(--space-2);
+}

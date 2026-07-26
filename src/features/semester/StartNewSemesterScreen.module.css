@@ -1,0 +1,46 @@
+.content {
+  padding: 0 var(--space-4) var(--space-8);
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.warning {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--color-status-danger-subtle);
+  color: var(--color-status-danger);
+  border-radius: var(--radius-md);
+  font: var(--text-body-default);
+}
+
+.listSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.listTitle {
+  font: var(--text-label-default);
+  color: var(--color-text-secondary);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding-left: var(--space-5);
+  list-style: disc;
+  font: var(--text-body-default);
+}
+
+.exportReminder {
+  font: var(--text-body-small);
+  color: var(--color-text-secondary);
+}
+
+.exportReminder a {
+  color: var(--color-action-primary);
+}

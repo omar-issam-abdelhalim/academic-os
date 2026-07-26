@@ -1,0 +1,95 @@
+.content {
+  padding: 0 var(--space-4) var(--space-8);
+}
+
+.filterRow {
+  margin-bottom: var(--space-3);
+}
+
+.filterToggle {
+  min-height: 36px;
+  font: var(--text-body-small);
+  color: var(--color-text-secondary);
+}
+
+.filterChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.filterChipButton[aria-pressed="true"] {
+  outline: 2px solid var(--color-action-primary);
+  outline-offset: 1px;
+  border-radius: var(--radius-pill);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  text-align: left;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-md);
+}
+
+.row:hover {
+  border-color: var(--color-border-strong);
+}
+
+.rowMain {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.courseName {
+  font: var(--text-heading-serif-h1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.courseMeta {
+  font: var(--text-body-small);
+  color: var(--color-text-secondary);
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-top: var(--space-1);
+}
+
+.chevron {
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+}
+
+@media (min-width: 600px) {
+  .list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .content {
+    padding: 0 var(--space-8) var(--space-8);
+  }
+  .list {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

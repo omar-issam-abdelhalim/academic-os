@@ -1,0 +1,60 @@
+.content {
+  padding: 0 var(--space-4) var(--space-16);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  max-width: 640px;
+}
+
+.sectionTitle {
+  font: var(--text-heading-h3);
+  margin-bottom: var(--space-2);
+}
+
+.muted {
+  color: var(--color-text-tertiary);
+  font: var(--text-body-default);
+  padding: var(--space-2) 0;
+}
+
+.weekGroup {
+  margin-bottom: var(--space-2);
+}
+
+.weekHeader {
+  display: block;
+  width: 100%;
+  text-align: left;
+  min-height: 44px;
+  font: var(--text-label-default);
+  color: var(--color-text-secondary);
+  padding: var(--space-2) var(--space-1);
+}
+
+.snackbar {
+  position: fixed;
+  bottom: calc(56px + var(--space-4) + env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  background: var(--color-text-primary);
+  color: var(--color-bg-canvas);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  font: var(--text-body-small);
+  z-index: 30;
+}
+
+.undoButton {
+  color: var(--color-action-primary-subtle);
+  font-weight: 600;
+  min-height: 32px;
+}
+
+@media (min-width: 1024px) {
+  .snackbar {
+    bottom: var(--space-6);
+  }
+}

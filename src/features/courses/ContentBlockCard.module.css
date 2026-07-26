@@ -1,0 +1,75 @@
+.card {
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+}
+
+.title {
+  font: var(--text-label-default);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-2);
+}
+
+.textPreview {
+  font: var(--text-body-large);
+  color: var(--color-text-primary);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.textPreview :global(h2) {
+  font: var(--text-heading-h2);
+}
+.textPreview :global(h3) {
+  font: var(--text-heading-h3);
+}
+.textPreview :global(ul) {
+  list-style: disc;
+  padding-left: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.textPreview :global(code) {
+  font-family: var(--font-mono);
+  background: var(--color-bg-sunken);
+  padding: 1px 4px;
+  border-radius: var(--radius-xs);
+  font-size: 0.9em;
+}
+.textPreview :global(a) {
+  color: var(--color-action-primary);
+}
+
+.fileCard {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  text-align: left;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-md);
+}
+
+.fileCard:hover {
+  border-color: var(--color-border-strong);
+}
+
+.fileIcon {
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+}
+
+.fileMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.fileSub {
+  font: var(--text-body-small);
+  color: var(--color-text-tertiary);
+}

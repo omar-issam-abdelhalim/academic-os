@@ -1,0 +1,65 @@
+.content {
+  padding: 0 var(--space-4) var(--space-8);
+  max-width: 720px;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-border-default);
+  margin-bottom: var(--space-6);
+}
+
+.typeBadge {
+  align-self: flex-start;
+  font: var(--text-label-caption);
+  color: var(--color-action-primary);
+  background: var(--color-action-primary-subtle);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-xs);
+}
+
+.title {
+  font: var(--text-heading-serif-h1);
+}
+
+.section {
+  margin-bottom: var(--space-6);
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+}
+
+.sectionTitle {
+  font: var(--text-heading-h3);
+}
+
+.blockList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.collapsibleHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  color: var(--color-text-primary);
+}
+
+.mutedInline {
+  color: var(--color-text-tertiary);
+  font: var(--text-body-small);
+  padding: var(--space-2) 0 0 var(--space-6);
+}
+
+.emptyInline {
+  padding-left: var(--space-1);
+}

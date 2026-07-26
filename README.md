@@ -2,19 +2,30 @@
 
 A premium, local-first academic and learning management Progressive Web App — a personal academic operating system for organizing courses, units, materials, tasks, weekly schedule, attendance, grades, practice performance, analytics, and semester exports.
 
-**Status:** Stage 0 (specification & architecture) reviewed and finalized by the product owner. No application code exists yet by design — see [docs/ROADMAP.md](./docs/ROADMAP.md). Stage 1 has not started.
+**Status:** Stage 0 (specification & architecture) and Stage 2 (engineering foundation, live UI, PWA, CI) are complete. Stage 1A (UX architecture) is approved; Stage 1B (visual design system) established approved token foundations before moving to direct implementation — see [docs/ROADMAP.md](./docs/ROADMAP.md). Stage 3 (real Course/Unit/Task/Schedule/Grade persistence, replacing the current reference fixtures) has not started.
+
+## Quick Start
+
+```
+npm install
+npm run dev
+```
+
+See [docs/DEVELOPMENT.md](./docs/DEVELOPMENT.md) for the full command reference (typecheck, lint, test, build).
 
 ## Start Here
 
-This repository is documentation-first. Before writing any code, read:
+This repository is documentation-first — read the relevant docs before changing code:
 
 1. [docs/PRODUCT_SPEC.md](./docs/PRODUCT_SPEC.md) — what the product does and its business rules
 2. [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) — the technical stack and why
 3. [docs/DATA_MODEL.md](./docs/DATA_MODEL.md) — entities, relationships, storage architecture
 4. [docs/SECURITY.md](./docs/SECURITY.md) — threat model and privacy commitments
-5. [docs/DEVELOPMENT.md](./docs/DEVELOPMENT.md) — Git workflow, versioning, testing strategy, and the rule for keeping docs in sync with code
+5. [docs/DEVELOPMENT.md](./docs/DEVELOPMENT.md) — Git workflow, versioning, testing strategy, local dev commands
 6. [docs/ROADMAP.md](./docs/ROADMAP.md) — the staged plan from here to `v1.0.0`
-7. [docs/STAGE_0_REPORT.md](./docs/STAGE_0_REPORT.md) — what Stage 0 delivered, decisions made, and open questions
+7. [docs/STAGE_1A_UX_ARCHITECTURE.md](./docs/STAGE_1A_UX_ARCHITECTURE.md) — approved navigation/IA/user flows
+8. [docs/STAGE_1B_DESIGN_SYSTEM.md](./docs/STAGE_1B_DESIGN_SYSTEM.md) — approved visual foundations (tokens)
+9. [docs/STAGE_2_REPORT.md](./docs/STAGE_2_REPORT.md) — what Stage 2 delivered and what's still a fixture vs. real
 
 ## Principles
 

@@ -1,0 +1,76 @@
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.totalCard {
+  padding: var(--space-4);
+  background: var(--color-bg-sunken);
+  border-radius: var(--radius-md);
+}
+
+.totalLabel {
+  font: var(--text-label-default);
+  color: var(--color-text-secondary);
+}
+
+.totalValue {
+  font: var(--text-numeric-large);
+  margin-top: var(--space-1);
+}
+
+.totalSlash {
+  color: var(--color-text-tertiary);
+  margin: 0 2px;
+}
+
+.entryList {
+  display: flex;
+  flex-direction: column;
+}
+
+.entryRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--color-border-default);
+  font: var(--text-body-default);
+}
+
+.entryRow:last-child {
+  border-bottom: none;
+}
+
+.categoryBlock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.categoryHeader {
+  display: flex;
+  justify-content: space-between;
+  font: var(--text-heading-h3);
+  padding-bottom: var(--space-1);
+  border-bottom: 1px solid var(--color-border-strong);
+}
+
+.categoryDetail {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  font: var(--text-body-small);
+  color: var(--color-text-secondary);
+}
+
+.pending {
+  color: var(--color-text-tertiary);
+  font-style: italic;
+}
+
+.unallocated {
+  color: var(--color-status-warning);
+}

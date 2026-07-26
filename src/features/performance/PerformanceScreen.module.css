@@ -1,0 +1,81 @@
+.content {
+  padding: 0 var(--space-4) var(--space-8);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  max-width: 720px;
+}
+
+.disclaimer {
+  align-self: flex-start;
+}
+
+.select {
+  max-width: 260px;
+}
+
+.grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.statHeader {
+  display: flex;
+  justify-content: space-between;
+  font: var(--text-body-default);
+}
+
+.barTrack {
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: var(--color-bg-sunken);
+  overflow: hidden;
+}
+
+.barFill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+}
+.barFill[data-tone="success"] {
+  background: var(--color-status-success);
+}
+.barFill[data-tone="info"] {
+  background: var(--color-status-info);
+}
+.barFill[data-tone="warning"] {
+  background: var(--color-status-warning);
+}
+
+.insightSection {
+  margin-top: var(--space-2);
+}
+
+.sectionTitle {
+  font: var(--text-heading-h3);
+  margin-bottom: var(--space-2);
+}
+
+.courseList {
+  display: flex;
+  flex-direction: column;
+}
+
+.courseRow {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--color-border-default);
+}
+
+.footnote {
+  margin-top: var(--space-3);
+  font: var(--text-body-small);
+  color: var(--color-text-tertiary);
+}

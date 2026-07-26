@@ -1,0 +1,12 @@
+.banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-status-info-subtle);
+  color: var(--color-status-info);
+  font: var(--text-body-small);
+  text-align: center;
+  flex-wrap: wrap;
+}

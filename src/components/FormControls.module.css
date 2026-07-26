@@ -1,0 +1,128 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.label {
+  font: var(--text-label-default);
+  color: var(--color-text-secondary);
+}
+
+.hint {
+  font: var(--text-body-small);
+  color: var(--color-text-tertiary);
+}
+
+.error {
+  font: var(--text-body-small);
+  color: var(--color-status-danger);
+}
+
+.control {
+  height: 44px;
+  padding: 0 var(--space-3);
+  background: var(--color-bg-sunken);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-primary);
+  font: var(--text-body-default);
+  transition: border-color var(--motion-fast) var(--ease-out);
+}
+
+.control:hover {
+  border-color: var(--color-border-strong);
+}
+
+.control:focus-visible {
+  border-color: var(--color-focus-ring);
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 1px;
+}
+
+.control[aria-invalid="true"] {
+  border-color: var(--color-status-danger);
+}
+
+.textarea {
+  height: auto;
+  min-height: 120px;
+  padding: var(--space-3);
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.select {
+  appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) center,
+    calc(100% - 13px) center;
+  background-size:
+    5px 5px,
+    5px 5px;
+  background-repeat: no-repeat;
+  color: var(--color-text-primary);
+}
+
+.checkboxWrap {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+}
+
+.checkboxInput {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--color-action-primary);
+  cursor: pointer;
+}
+
+.checkboxLabel {
+  font: var(--text-body-default);
+  cursor: pointer;
+}
+
+.toggleWrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  cursor: pointer;
+}
+
+.toggleLabel {
+  font: var(--text-body-default);
+}
+
+.toggle {
+  width: 44px;
+  height: 26px;
+  border-radius: var(--radius-pill);
+  background: var(--color-border-strong);
+  position: relative;
+  transition: background-color var(--motion-fast) var(--ease-out);
+  flex-shrink: 0;
+}
+
+.toggleOn {
+  background: var(--color-action-primary);
+}
+
+.toggleThumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--color-bg-surface);
+  transition: transform var(--motion-fast) var(--ease-out);
+}
+
+.toggleOn .toggleThumb {
+  transform: translateX(18px);
+}

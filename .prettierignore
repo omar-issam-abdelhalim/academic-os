@@ -1,0 +1,13 @@
+# Hand-authored product/architecture docs and top-level project docs keep
+# their own established prose formatting — Prettier's opinions (table
+# padding, emphasis-underscore style) aren't a good fit for documents that
+# predate the code and are reviewed as prose, not diffed as code.
+docs/
+README.md
+CHANGELOG.md
+
+# Build output / generated
+dist/
+dev-dist/
+coverage/
+public/icons/

@@ -1,0 +1,31 @@
+.results {
+  margin-top: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.result {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-primary);
+}
+
+.result:hover,
+.result:focus-visible {
+  background: var(--color-bg-sunken);
+}
+
+.empty {
+  padding: var(--space-4);
+  color: var(--color-text-tertiary);
+  text-align: center;
+  font: var(--text-body-small);
+}

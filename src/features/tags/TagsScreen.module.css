@@ -1,0 +1,78 @@
+.content {
+  padding: 0 var(--space-4) var(--space-8);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+}
+
+.row:hover {
+  background: var(--color-bg-sunken);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.colorLabel {
+  font: var(--text-label-default);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-2);
+}
+
+.colorGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.colorSwatch {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+}
+
+.colorSwatch[aria-pressed="true"] {
+  border-color: var(--color-action-primary);
+}
+
+.colorSwatch[data-tag-color="slate"] {
+  background: var(--tag-slate-fg);
+}
+.colorSwatch[data-tag-color="sage"] {
+  background: var(--tag-sage-fg);
+}
+.colorSwatch[data-tag-color="clay"] {
+  background: var(--tag-clay-fg);
+}
+.colorSwatch[data-tag-color="amber"] {
+  background: var(--tag-amber-fg);
+}
+.colorSwatch[data-tag-color="plum"] {
+  background: var(--tag-plum-fg);
+}
+.colorSwatch[data-tag-color="teal"] {
+  background: var(--tag-teal-fg);
+}
+.colorSwatch[data-tag-color="rose"] {
+  background: var(--tag-rose-fg);
+}
+.colorSwatch[data-tag-color="olive"] {
+  background: var(--tag-olive-fg);
+}
+.colorSwatch[data-tag-color="stone"] {
+  background: var(--tag-stone-fg);
+}

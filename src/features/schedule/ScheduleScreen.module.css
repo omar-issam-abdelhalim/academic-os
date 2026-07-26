@@ -1,0 +1,13 @@
+.content {
+  padding: 0 var(--space-4) var(--space-8);
+}
+
+.desktopContent {
+  padding: 0 var(--space-8) var(--space-8);
+}
+
+.weekLabel {
+  font: var(--text-label-caption);
+  color: var(--color-text-tertiary);
+  margin-bottom: var(--space-3);
+}

@@ -61,9 +61,24 @@ CI (GitHub Actions) runs typecheck, lint, and the unit/integration/component tes
 
 Priority order for what gets tested first as features land: anything with a formula a human could get subtly wrong (grade math, week boundaries, attendance %), anything that touches destructive operations (clear semester, import), and anything that crosses the untrusted-input boundary (archive import validation).
 
-## Local Development (established in Stage 2)
+## Local Development
 
-Stage 0 intentionally does not scaffold `package.json`/build tooling — see ROADMAP.md and STAGE_0_REPORT.md for why this is deferred to Stage 2 ("Engineering Foundation"). Once scaffolded, this section will document `npm install`, `npm run dev`, `npm test`, `npm run build`, and `npm run lint` as the standard local loop.
+Scaffolded in Stage 2 (React + TypeScript + Vite, per ARCHITECTURE.md). Standard local loop:
+
+| Command | Does |
+|---|---|
+| `npm install` | Install dependencies (lockfile-pinned) |
+| `npm run dev` | Start the Vite dev server |
+| `npm run typecheck` | `tsc -b --noEmit` across both app and Node (config) projects |
+| `npm run lint` | ESLint (flat config, TypeScript + React Hooks + jsx-a11y rules) |
+| `npm run format` / `format:check` | Prettier write / check |
+| `npm test` | Vitest (unit, integration, component — jsdom + fake-indexeddb) |
+| `npm run build` | Typecheck + production build (`dist/`) |
+| `npm run preview` | Serve the production build locally |
+
+`node scripts/generate-icons.mjs` regenerates the PWA icon set (`public/icons/`) if the brand mark ever changes — see the script's own header comment.
+
+CI (`.github/workflows/ci.yml`) runs typecheck, lint, format check, test, and build on every push/PR to `main`.
 
 ## Code Review Expectations
 

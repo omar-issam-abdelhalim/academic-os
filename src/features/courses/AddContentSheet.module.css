@@ -1,0 +1,32 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-3);
+}
+
+.option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-5) var(--space-3);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-md);
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+
+.option:hover {
+  border-color: var(--color-action-primary);
+  color: var(--color-action-primary);
+}
+
+.optionLabel {
+  font: var(--text-label-default);
+  color: var(--color-text-primary);
+}
+
+.optionDescription {
+  font: var(--text-body-small);
+  color: var(--color-text-tertiary);
+}

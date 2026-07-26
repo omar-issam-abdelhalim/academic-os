@@ -1,0 +1,93 @@
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: 26px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-pill);
+  font: var(--text-label-caption);
+  background: var(--tag-slate-bg);
+  color: var(--tag-slate-fg);
+}
+
+.chip[data-tag-color="slate"] {
+  background: var(--tag-slate-bg);
+  color: var(--tag-slate-fg);
+}
+.chip[data-tag-color="sage"] {
+  background: var(--tag-sage-bg);
+  color: var(--tag-sage-fg);
+}
+.chip[data-tag-color="clay"] {
+  background: var(--tag-clay-bg);
+  color: var(--tag-clay-fg);
+}
+.chip[data-tag-color="amber"] {
+  background: var(--tag-amber-bg);
+  color: var(--tag-amber-fg);
+}
+.chip[data-tag-color="plum"] {
+  background: var(--tag-plum-bg);
+  color: var(--tag-plum-fg);
+}
+.chip[data-tag-color="teal"] {
+  background: var(--tag-teal-bg);
+  color: var(--tag-teal-fg);
+}
+.chip[data-tag-color="rose"] {
+  background: var(--tag-rose-bg);
+  color: var(--tag-rose-fg);
+}
+.chip[data-tag-color="olive"] {
+  background: var(--tag-olive-bg);
+  color: var(--tag-olive-fg);
+}
+.chip[data-tag-color="stone"] {
+  background: var(--tag-stone-bg);
+  color: var(--tag-stone-fg);
+}
+
+.remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  color: inherit;
+  opacity: 0.7;
+}
+.remove:hover {
+  opacity: 1;
+  background: rgb(0 0 0 / 10%);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  font: var(--text-label-caption);
+}
+
+.neutral {
+  background: var(--color-bg-sunken);
+  color: var(--color-text-secondary);
+}
+.success {
+  background: var(--color-status-success-subtle);
+  color: var(--color-status-success);
+}
+.warning {
+  background: var(--color-status-warning-subtle);
+  color: var(--color-status-warning);
+}
+.danger {
+  background: var(--color-status-danger-subtle);
+  color: var(--color-status-danger);
+}
+.info {
+  background: var(--color-status-info-subtle);
+  color: var(--color-status-info);
+}
