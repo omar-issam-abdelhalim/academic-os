@@ -2,6 +2,10 @@
   padding: 0 var(--space-4) var(--space-8);
 }
 
+.message {
+  margin-bottom: var(--space-3);
+}
+
 .filterRow {
   margin-bottom: var(--space-3);
 }

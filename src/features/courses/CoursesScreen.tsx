@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, ChevronRight } from "lucide-react";
 import { ScreenHeader } from "@/app/ScreenHeader";
-import { IconButton, TagChip, EmptyState } from "@/components";
+import { IconButton, TagChip, EmptyState, StatusBadge } from "@/components";
 import { fixtureCourses, fixtureTags, tagById, unitsForCourse } from "@/fixtures";
 import styles from "./CoursesScreen.module.css";
 
@@ -16,6 +16,7 @@ export function CoursesScreen() {
   const navigate = useNavigate();
   const [filterOpen, setFilterOpen] = useState(false);
   const [activeTagIds, setActiveTagIds] = useState<Set<string>>(new Set());
+  const [message, setMessage] = useState<string | null>(null);
 
   const usedTagIds = useMemo(() => new Set(fixtureCourses.flatMap((c) => c.tagIds)), []);
   const filterableTags = fixtureTags.filter((t) => usedTagIds.has(t.id));
@@ -38,12 +39,24 @@ export function CoursesScreen() {
       <ScreenHeader
         title="Courses"
         action={
-          <IconButton aria-label="Add course">
+          <IconButton
+            aria-label="Add course"
+            onClick={() =>
+              setMessage(
+                "Creating courses arrives in Stage 3 — this button is a reference placeholder for now.",
+              )
+            }
+          >
             <Plus size={20} strokeWidth={1.5} aria-hidden="true" />
           </IconButton>
         }
       />
       <div className={styles.content}>
+        {message && (
+          <StatusBadge tone="info" className={styles.message}>
+            {message}
+          </StatusBadge>
+        )}
         {filterableTags.length > 0 && (
           <div className={styles.filterRow}>
             <button

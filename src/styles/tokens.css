@@ -94,7 +94,15 @@
   --color-border-strong: #cfccc3;
   --color-text-primary: #201f1b;
   --color-text-secondary: #5b5952;
-  --color-text-tertiary: #8b8880;
+  /* Stage 2 finalization fix: the original Stage 1B value (#8B8880) measured
+     3.13–3.38:1 against bg/sunken and bg/canvas (WCAG AA requires 4.5:1 for
+     normal text) — confirmed by an automated axe-core scan, not asserted.
+     This keeps the same warm-gray hue, darkened just enough to clear AA on
+     both backgrounds (≈4.76:1 on bg/sunken, ≈5.15:1 on bg/canvas) while
+     staying visually lighter than text/secondary, preserving the tertiary
+     tier of the type hierarchy. Dark theme's equivalent (#86847C) already
+     passes AA (≈4.74–4.96:1) and was left unchanged. */
+  --color-text-tertiary: #6e6a62;
   --color-text-disabled: #b7b4ab;
   --color-text-inverse: #fafaf7;
   --color-action-primary: #2b4c7e;

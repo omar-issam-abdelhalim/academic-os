@@ -1,7 +1,8 @@
+import { useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Plus, ChevronRight, Clock, MapPin } from "lucide-react";
 import { ScreenHeader } from "@/app/ScreenHeader";
-import { IconButton, SegmentedControl, TagChip, EmptyState } from "@/components";
+import { IconButton, SegmentedControl, TagChip, EmptyState, StatusBadge } from "@/components";
 import { TaskRow } from "@/features/shared/TaskRow";
 import { useFixtureTasks } from "@/features/shared/useFixtureTasks";
 import { GradesSection } from "@/features/grades/GradesSection";
@@ -38,6 +39,7 @@ export function CourseDetailScreen() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { tasks, toggle } = useFixtureTasks();
+  const [message, setMessage] = useState<string | null>(null);
 
   const course = courseId ? courseById(courseId) : undefined;
   const section = (searchParams.get("section") as Section) || "units";
@@ -96,7 +98,15 @@ export function CourseDetailScreen() {
             {section === "units" && (
               <>
                 <div className={styles.sectionToolbar}>
-                  <IconButton aria-label="Add unit">
+                  {message && <StatusBadge tone="info">{message}</StatusBadge>}
+                  <IconButton
+                    aria-label="Add unit"
+                    onClick={() =>
+                      setMessage(
+                        "Creating units arrives in Stage 3 — this button is a reference placeholder for now.",
+                      )
+                    }
+                  >
                     <Plus size={18} strokeWidth={1.5} aria-hidden="true" />
                   </IconButton>
                 </div>

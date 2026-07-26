@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { AlertTriangle } from "lucide-react";
 import { ScreenHeader } from "@/app/ScreenHeader";
 import { Button, Field, Input } from "@/components";
@@ -57,7 +57,7 @@ export function StartNewSemesterScreen() {
         </section>
 
         <p className={styles.exportReminder}>
-          Haven&rsquo;t exported this semester yet? <a href="/data/export">Export it first</a> —
+          Haven&rsquo;t exported this semester yet? <Link to="/data/export">Export it first</Link> —
           exporting never deletes anything, and this action never exports for you automatically.
         </p>
 

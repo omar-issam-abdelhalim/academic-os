@@ -108,7 +108,7 @@ Semantic tokens only (no separate primitive layer surfaced in Figma, to keep the
 | border/strong | `#CFCCC3` | Emphasized borders (focus-adjacent, input on hover) |
 | text/primary | `#201F1B` | Primary reading text |
 | text/secondary | `#5B5952` | Metadata, secondary lines |
-| text/tertiary | `#8B8880` | Timestamps, least-emphasized labels |
+| text/tertiary | ~~`#8B8880`~~ → `#6E6A62` (Stage 2 finalization fix — see docs/STAGE_2_REPORT.md; the original value measured 3.13–3.38:1 against bg/sunken and bg/canvas via an automated axe-core scan, below WCAG AA's 4.5:1 for normal text) | Timestamps, least-emphasized labels |
 | text/disabled | `#B7B4AB` | Disabled control text |
 | text/inverse | `#FAFAF7` | Text on filled accent surfaces |
 | action/primary | `#2B4C7E` | Ink-blue — the *only* primary accent; buttons, links, selected states |

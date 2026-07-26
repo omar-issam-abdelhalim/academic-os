@@ -59,5 +59,10 @@ export default defineConfig({
     globals: true,
     setupFiles: ["./src/test/setup.ts"],
     css: true,
+    // Vitest's default include glob (**/*.{test,spec}.*) also matches the
+    // Playwright specs under e2e/ — those run only via `npm run test:e2e`
+    // (a real browser, not jsdom) and import Playwright's own `test`
+    // global, which conflicts with Vitest's if picked up here.
+    include: ["src/**/*.test.{ts,tsx}"],
   },
 });

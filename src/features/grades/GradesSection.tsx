@@ -1,4 +1,5 @@
-import { EmptyState, Button } from "@/components";
+import { useState } from "react";
+import { EmptyState, Button, StatusBadge } from "@/components";
 import {
   sumRecorded,
   summarizeCategory,
@@ -13,19 +14,36 @@ export interface GradesSectionProps {
   entries: GradeEntry[];
 }
 
+const NOT_YET_WIRED_MESSAGE =
+  "Recording grades arrives in Stage 5 — this button is a reference placeholder for now.";
+
 /**
  * Course Detail's Grades tab (STAGE_1A_UX_ARCHITECTURE.md §L). Mode is
  * emergent: no categories → Simple Mode (flat list); any category exists
  * → Structured Mode (nested rollups). Never fabricates certainty — gaps
  * are always shown as "not yet recorded/allocated," never zero.
+ *
+ * "Add grade"/"Add course structure" are reference-only in Stage 2 (no
+ * GradeEntry repository exists yet) — clicking them shows an explicit
+ * message rather than doing nothing, so the UI never looks broken or
+ * silently implies a save that didn't happen.
  */
 export function GradesSection({ categories, entries }: GradesSectionProps) {
+  const [message, setMessage] = useState<string | null>(null);
+
   if (categories.length === 0 && entries.length === 0) {
     return (
       <EmptyState
         title="No grades yet"
         description="Add grades as they come in (Simple Mode), or define your course's category structure upfront (Structured Mode) — you can switch to structure later without losing anything."
-        action={<Button size="small">Add grade</Button>}
+        action={
+          <div className={styles.actionStack}>
+            <Button size="small" onClick={() => setMessage(NOT_YET_WIRED_MESSAGE)}>
+              Add grade
+            </Button>
+            {message && <StatusBadge tone="info">{message}</StatusBadge>}
+          </div>
+        }
       />
     );
   }
@@ -53,9 +71,16 @@ export function GradesSection({ categories, entries }: GradesSectionProps) {
             </li>
           ))}
         </ul>
-        <Button variant="secondary" size="small">
-          Add course structure
-        </Button>
+        <div className={styles.actionStack}>
+          <Button
+            variant="secondary"
+            size="small"
+            onClick={() => setMessage(NOT_YET_WIRED_MESSAGE)}
+          >
+            Add course structure
+          </Button>
+          {message && <StatusBadge tone="info">{message}</StatusBadge>}
+        </div>
       </div>
     );
   }
