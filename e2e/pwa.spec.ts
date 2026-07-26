@@ -112,6 +112,12 @@ test.describe("PWA — manifest, icons, service worker, offline shell", () => {
     await createSemester(page);
     await page.goto("/settings");
     await expect(page.getByText("Year 2 · Semester 1")).toBeVisible();
+    // Wait for the service worker to actually control this page before
+    // cutting the network — without this, a reload while offline can hit
+    // net::ERR_INTERNET_DISCONNECTED outright (observed on CI/Linux)
+    // instead of being served from precache, because there's nothing yet
+    // intercepting the navigation request.
+    await page.evaluate(async () => navigator.serviceWorker.ready);
 
     await context.setOffline(true);
     try {

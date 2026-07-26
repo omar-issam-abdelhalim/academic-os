@@ -114,7 +114,7 @@ Semantic tokens only (no separate primitive layer surfaced in Figma, to keep the
 | action/primary | `#2B4C7E` | Ink-blue — the *only* primary accent; buttons, links, selected states |
 | action/primary-hover / -pressed / -subtle | `#1F3A63` / `#17304F` / `#EAF0F8` | Interaction states for the accent |
 | status/success, /success-subtle | `#3F7857` / `#E8F3EC` | Attended, completed, positive confirmation |
-| status/warning, /warning-subtle | `#9C6B1F` / `#FBF1E1` | "Attendance not recorded," partial-allocation notices |
+| status/warning, /warning-subtle | ~~`#9C6B1F`~~ → `#91631A` / `#FBF1E1` (Stage 2 finalization fix — see docs/STAGE_2_REPORT.md; the original value measured 4.13:1 against warning-subtle via an automated axe-core scan, below WCAG AA's 4.5:1) | "Attendance not recorded," partial-allocation notices |
 | status/danger, /danger-subtle | `#A43E33` / `#FBEAE7` | Destructive actions, Missed, overdue |
 | status/info, /info-subtle | `#3E6C8C` / `#E9F2F7` | Neutral informational callouts |
 | focus/ring | `#2B4C7E` | Keyboard focus ring (same as primary — one accent, no competing focus color) |

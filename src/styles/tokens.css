@@ -111,7 +111,15 @@
   --color-action-primary-subtle: #eaf0f8;
   --color-status-success: #3f7857;
   --color-status-success-subtle: #e8f3ec;
-  --color-status-warning: #9c6b1f;
+  /* Stage 2 finalization fix (found by CI's axe-core run on Linux, where
+     the fixture data's "In progress" badge happened to be visible — see
+     docs/STAGE_2_REPORT.md): the original Stage 1B value (#9C6B1F)
+     measured 4.13:1 against warning-subtle, just under WCAG AA's 4.5:1.
+     Darkened to #91631A (~4.69:1). Every other status/action color pair
+     was re-checked by hand against the WCAG relative-luminance formula
+     at the same time and already clears AA (success ≈4.58:1, danger
+     ≈5.44:1, info ≈4.96:1, action/primary ≈7.51:1) — left unchanged. */
+  --color-status-warning: #91631a;
   --color-status-warning-subtle: #fbf1e1;
   --color-status-danger: #a43e33;
   --color-status-danger-subtle: #fbeae7;
