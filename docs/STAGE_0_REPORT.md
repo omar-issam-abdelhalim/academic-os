@@ -1,5 +1,7 @@
 # Stage 0 Report — Specification & Architecture
 
+> **Superseded note (Stage 2 finalization):** this report's hosting decision below (Netlify) was the Stage 0 choice and is preserved here as the historical record — it is **no longer current**. Netlify was tried during Stage 2, never successfully deployed (blocked on interactive login), and has been fully removed. **GitHub Pages is now the permanent hosting decision** — see [ARCHITECTURE.md](./ARCHITECTURE.md#hosting--deployment) and [STAGE_2_REPORT.md](./STAGE_2_REPORT.md).
+
 **Status: reviewed and finalized by the product owner.** This report was updated in a Stage 0 *finalization* pass that resolved the open questions from the initial draft, fixed a data-model inconsistency, added the repository license, and connected the GitHub remote. Stage 0 remains documentation/architecture only — no application code was introduced. **Stage 1 has not started.**
 
 ## Summary

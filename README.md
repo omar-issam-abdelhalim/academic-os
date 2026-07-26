@@ -13,6 +13,10 @@ npm run dev
 
 See [docs/DEVELOPMENT.md](./docs/DEVELOPMENT.md) for the full command reference (typecheck, lint, test, build).
 
+## Deployment
+
+GitHub is the source repository, GitHub Actions provides CI/CD, and **GitHub Pages** is the permanent production host — this is a settled architecture decision, not Netlify or any other provider. Every push to `main` that passes the quality gate (typecheck/lint/format/test/build/E2E) deploys automatically. See [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md#hosting--deployment) for the full pipeline, base-path, and PWA-correctness detail.
+
 ## Start Here
 
 This repository is documentation-first — read the relevant docs before changing code:

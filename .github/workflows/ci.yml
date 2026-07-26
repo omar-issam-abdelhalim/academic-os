@@ -6,10 +6,17 @@ on:
   pull_request:
     branches: [main]
 
-# Least-privilege default — this workflow only reads the repo and runs
-# checks; it never needs to write anything back.
+# Least-privilege default — most jobs only read the repo and run checks.
+# The `deploy` job below overrides this with the minimum GitHub Pages needs
+# (pages: write, id-token: write) for itself only.
 permissions:
   contents: read
+
+# Only one production deploy in flight at a time; never cancel one that's
+# already uploading/activating (avoids a half-published Pages deployment).
+concurrency:
+  group: pages
+  cancel-in-progress: false
 
 jobs:
   quality:
@@ -54,3 +61,55 @@ jobs:
           name: playwright-report
           path: playwright-report/
           retention-days: 7
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: quality
+    # Production hosting: GitHub Pages, sourced from this workflow (Actions
+    # deployment, not the legacy "deploy from a branch" mode) — see
+    # docs/ARCHITECTURE.md — Hosting & Deployment. Only runs after `quality`
+    # passes, and only for the commit actually landing on `main`; PRs get
+    # the quality gate but no deploy.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies (deterministic, lockfile-pinned)
+        run: npm ci
+
+      - name: Derive base path from repository name
+        id: base
+        # GitHub Pages project sites are served under /<repo>/, never the
+        # domain root. Read directly from GITHUB_REPOSITORY (owner/repo,
+        # provided by Actions) instead of hardcoding a repository name.
+        run: echo "path=/${GITHUB_REPOSITORY#*/}/" >> "$GITHUB_OUTPUT"
+
+      - name: Build for GitHub Pages
+        env:
+          VITE_BASE_PATH: ${{ steps.base.outputs.path }}
+        run: npm run build
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload build artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

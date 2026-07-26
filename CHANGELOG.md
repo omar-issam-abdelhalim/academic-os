@@ -4,6 +4,27 @@ All notable changes to this project are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-07-27
+
+Stage 2 finalization: infrastructure correction. Replaces the Netlify hosting decision — never successfully deployed, blocked on interactive login — with a permanent GitHub Pages + GitHub Actions deployment pipeline, and verifies the real production PWA. No product/UI/data-model changes.
+
+### Removed
+
+- Netlify entirely: `netlify.toml`, Netlify CLI permission entries, and Netlify as the documented/approved hosting provider.
+
+### Added
+
+- GitHub Pages deployment: a `deploy` job in `.github/workflows/ci.yml`, gated on the existing `quality` job passing on `main`, using only official GitHub actions (`configure-pages`, `upload-pages-artifact`, `deploy-pages`).
+- `public/404.html` + `src/app/githubPagesRedirect.ts`: the standard GitHub Pages SPA deep-link pattern, needed because GitHub Pages (unlike Netlify) has no server-side rewrite rule; `BrowserRouter`'s clean URLs are preserved rather than switching to `HashRouter`.
+- `<meta http-equiv="Content-Security-Policy">` and `<meta name="referrer">` in `index.html`, replacing the HTTP-header-based CSP/security headers `netlify.toml` used to send — GitHub Pages cannot set custom response headers at all. Documented gap: `X-Content-Type-Options`, `Permissions-Policy`, and `X-Frame-Options`/`frame-ancestors` have no static/meta equivalent and are not replicated (see `docs/SECURITY.md` §6).
+- `docs/ARCHITECTURE.md` "Hosting & Deployment" section recording GitHub Pages as the permanent hosting decision.
+
+### Changed
+
+- `vite.config.ts`: `base` now derived from `VITE_BASE_PATH` (set only by the deploy job, itself derived from `GITHUB_REPOSITORY`), defaulting to `/` everywhere else. PWA manifest `start_url`/`scope` now derive from `base` instead of being hardcoded to `/`; manifest icon `src` values are base-relative.
+- `src/App.tsx`: `BrowserRouter` now takes `basename={import.meta.env.BASE_URL}` so in-app navigation is correct under the GitHub Pages project-site subpath.
+- Documentation (`README.md`, `docs/ARCHITECTURE.md`, `docs/SECURITY.md`, `docs/DEVELOPMENT.md`, `docs/ROADMAP.md`, `docs/STAGE_0_REPORT.md`, `docs/STAGE_2_REPORT.md`) updated to reflect GitHub Pages as the current, permanent hosting decision; Stage 0's original Netlify record is preserved as history with a superseded-note, not rewritten.
+
 ## [0.2.0] - 2026-07-26
 
 Stage 2: engineering foundation, live UI system, PWA, and production pipeline. First release with actual application code — see `docs/STAGE_2_REPORT.md` for full detail.

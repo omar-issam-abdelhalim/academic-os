@@ -9,9 +9,29 @@
       name="description"
       content="Academic OS — a local-first personal academic operating system for courses, tasks, schedule, attendance, grades, and practice performance."
     />
-    <link rel="icon" href="/icons/icon-32.png" sizes="32x32" type="image/png" />
-    <link rel="icon" href="/icons/icon-16.png" sizes="16x16" type="image/png" />
-    <link rel="apple-touch-icon" href="/icons/icon-180.png" />
+    <!--
+      GitHub Pages serves only static files — there is no mechanism to send
+      custom HTTP response headers, unlike the Netlify `netlify.toml`
+      `[[headers]]` block this replaces. A <meta http-equiv> CSP is the
+      static-host fallback: it covers script-src/style-src/img-src/etc, but
+      per spec it cannot carry `frame-ancestors`, `sandbox`, or
+      report-uri/report-to, and there is no meta equivalent at all for the
+      `X-Content-Type-Options` or `Permissions-Policy` HTTP headers, or for
+      `X-Frame-Options` (clickjacking protection). That gap is a deliberate,
+      documented tradeoff of static-only hosting — see docs/SECURITY.md §6.
+      script-src stays 'self' only (no 'unsafe-inline') because the app has
+      zero inline scripts by design; the GitHub Pages 404-redirect handling
+      that used to need one lives in src/app/githubPagesRedirect.ts instead,
+      loaded as an ordinary same-origin module.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; media-src 'self' blob:; object-src 'none'; base-uri 'self'"
+    />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <link rel="icon" href="%BASE_URL%icons/icon-32.png" sizes="32x32" type="image/png" />
+    <link rel="icon" href="%BASE_URL%icons/icon-16.png" sizes="16x16" type="image/png" />
+    <link rel="apple-touch-icon" href="%BASE_URL%icons/icon-180.png" />
     <!-- vite-plugin-pwa injects the manifest link automatically -->
     <title>Academic OS</title>
   </head>

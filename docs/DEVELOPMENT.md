@@ -57,7 +57,7 @@ Semantic Versioning (`MAJOR.MINOR.PATCH`), pre-release throughout early developm
 | Round-trip | Vitest | Export → import produces equivalent structured data (excluding intentionally-excluded large media) |
 | End-to-end / PWA | Playwright (introduced when there's a real app to drive, likely Stage 2/3) | Offline behavior after install, service-worker update prompt flow, install-ability smoke test |
 
-CI (GitHub Actions) runs typecheck, lint, and the unit/integration/component test suites on every push and PR; E2E is added once there's a deployed preview to point Playwright at.
+CI (GitHub Actions, `.github/workflows/ci.yml`) runs typecheck, lint, format check, the unit/integration/component test suites, a production build, and the Playwright E2E suite (against `vite preview`) on every push and PR. On `main`, a second job deploys the quality-gated build to GitHub Pages — see ARCHITECTURE.md's Hosting & Deployment section.
 
 Priority order for what gets tested first as features land: anything with a formula a human could get subtly wrong (grade math, week boundaries, attendance %), anything that touches destructive operations (clear semester, import), and anything that crosses the untrusted-input boundary (archive import validation).
 
@@ -78,7 +78,7 @@ Scaffolded in Stage 2 (React + TypeScript + Vite, per ARCHITECTURE.md). Standard
 
 `node scripts/generate-icons.mjs` regenerates the PWA icon set (`public/icons/`) if the brand mark ever changes — see the script's own header comment.
 
-CI (`.github/workflows/ci.yml`) runs typecheck, lint, format check, test, and build on every push/PR to `main`.
+CI (`.github/workflows/ci.yml`) runs typecheck, lint, format check, test, build, and E2E on every push/PR to `main`; a separate `deploy` job (gated on that quality job passing) publishes `main` to GitHub Pages — the permanent production host, not Netlify or any other provider. See ARCHITECTURE.md's Hosting & Deployment section.
 
 ## Code Review Expectations
 

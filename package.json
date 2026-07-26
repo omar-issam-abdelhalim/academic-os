@@ -1,6 +1,6 @@
 {
   "name": "academic-os",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "type": "module",
   "description": "Local-first academic and learning management PWA — a personal academic operating system.",

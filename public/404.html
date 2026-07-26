@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Academic OS</title>
+    <script>
+      // GitHub Pages project sites have no server-side rewrite, so any deep
+      // link that isn't a literal static file (e.g. /academic-os/tasks)
+      // reaches this 404 page instead of the SPA. A project site's content
+      // always lives exactly one path segment deep (/<repo>/...), so the
+      // second segment is the app root regardless of the repository name —
+      // nothing here is hardcoded to "academic-os". Re-encode the intended
+      // path into a query string and redirect to that root; the matching
+      // logic in src/app/githubPagesRedirect.ts restores the real URL
+      // before React Router reads it. See docs/ARCHITECTURE.md — Hosting &
+      // Deployment for the full rationale.
+      var segments = window.location.pathname.split("/");
+      var base = "/" + segments[1] + "/";
+      var rest = segments.slice(2).join("/");
+      var target =
+        base + "?p=" + encodeURIComponent(rest + window.location.search + window.location.hash);
+      window.location.replace(target);
+    </script>
+  </head>
+  <body></body>
+</html>

@@ -48,7 +48,21 @@ Any imported semester archive or media zip is treated as **fully untrusted**, ev
 
 ## 6. Content Security Policy
 
-A strict CSP is a Stage 2 implementation task, planned now as: `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' (only if a CSS-in-JS approach requires it — avoided if possible); object-src 'none'; base-uri 'self'; frame-ancestors 'none'`. No remote script or style CDNs are used, which keeps the CSP tight and removes a class of third-party-script supply-chain risk entirely.
+Implemented, delivered via `<meta http-equiv="Content-Security-Policy">` in `index.html`:
+
+```
+default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:;
+font-src 'self'; connect-src 'self'; media-src 'self' blob:; object-src 'none'; base-uri 'self'
+```
+
+No remote script or style CDNs are used, which keeps the CSP tight and removes a class of third-party-script supply-chain risk entirely. `script-src` has no `'unsafe-inline'` allowance — the app ships zero inline scripts (the GitHub Pages deep-link redirect handling lives in `src/app/githubPagesRedirect.ts`, an ordinary same-origin bundled module, specifically so this stays true). `style-src 'unsafe-inline'` is a narrow, pre-existing, documented allowance for a handful of components that set genuinely dynamic computed values via the `style` attribute (desktop week-grid event positioning, progress bars); inline style injection cannot execute JavaScript, so this does not weaken the script-execution boundary.
+
+**Header vs. meta delivery — a GitHub Pages limitation, accepted deliberately:** the CSP above was originally planned for HTTP-header delivery (via Netlify's `netlify.toml` `[[headers]]`). GitHub Pages is 100% static file serving with **no mechanism to send custom HTTP response headers at all** — there is no server-side config surface to move this to. A `<meta http-equiv="Content-Security-Policy">` tag is the only static-host fallback, and it has real, spec-defined gaps versus the header form:
+
+- `frame-ancestors`, `sandbox`, and `report-uri`/`report-to` are **not honored** when CSP is delivered via `<meta>` — browsers silently ignore them. The meta CSP above omits `frame-ancestors` rather than including a directive that would falsely imply protection.
+- There is **no** static/meta equivalent for the `X-Content-Type-Options: nosniff`, `Permissions-Policy`, or `X-Frame-Options` HTTP headers Netlify previously sent (`netlify.toml`, now removed). These protections are **lost** on GitHub Pages and cannot be replicated without introducing a server, which is out of scope by design (local-first, no mandatory backend).
+
+**Residual risk assessment**: this is judged acceptable because the app has no cookies, no authentication/session state, no cross-origin embeds, and no server response body an attacker could get GitHub Pages to mis-serve — the primary risk `X-Content-Type-Options`/`X-Frame-Options`/`Permissions-Policy` mitigate (session hijacking via clickjacking/MIME-sniffing, unwanted device API access) is materially lower for a credential-less, local-data-only SPA than for a typical authenticated web app. This gap is recorded here rather than silently dropped so a future reviewer (human or AI) can re-evaluate it if the threat model ever changes (e.g. if auth/cloud sync is ever introduced — see Privacy below).
 
 ## 7. Secrets & Environment Variables
 
@@ -73,7 +87,7 @@ There are no backend secrets in this architecture — the app is 100% static and
 
 - All academic and self-reported data (courses, grades, tasks, schedule, attendance, check-ins) is local-only by default; nothing is transmitted anywhere, because there is no server for it to go to.
 - No tracking/behavioral analytics SDK is included. "Analytics" in this product means computing statistics over the user's own academic data, locally, for their own benefit — not telemetry about the user sent to a third party (see PRODUCT_SPEC.md §13, §25 of the original brief).
-- The static hosting provider (Netlify — approved, see ARCHITECTURE.md) only ever serves the static app bundle; it has no access to IndexedDB contents, which never leave the browser.
+- The static hosting provider (GitHub Pages — approved, permanent, see ARCHITECTURE.md's Hosting & Deployment section) only ever serves the static app bundle; it has no access to IndexedDB contents, which never leave the browser. Deployment does not imply, and must never imply, cloud synchronization of academic data.
 - If any future feature would change this (e.g. optional cloud sync, opt-in crash reporting), it requires explicit product-owner approval and must be clearly disclosed and opt-in — not a default.
 
 ## Accessibility Note (cross-referenced from engineering quality goals)
