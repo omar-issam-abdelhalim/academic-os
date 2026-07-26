@@ -1,6 +1,6 @@
 # Stage 2 Report — Engineering Foundation, Live UI System, PWA & Production Pipeline
 
-> **Status: finalized.** This report was updated in a Stage 2 *finalization* pass that replaced the initial pass's un-verifiable mobile-viewport claim with real, deterministic Playwright verification (151 tests across 7 viewport widths), ran a real offline/PWA verification pass, ran an automated accessibility scan that found and fixed a genuine WCAG contrast defect, fixed several UI elements that silently no-op'd instead of honestly signaling their Stage 3 boundary, and pushed the completed work to GitHub. See §26 for exactly what changed in this pass.
+> **Status: finalized.** This report was updated in a Stage 2 *finalization* pass that replaced the initial pass's un-verifiable mobile-viewport claim with real, deterministic Playwright verification (151 tests across 7 viewport widths), ran a real offline/PWA verification pass, ran an automated accessibility scan that found and fixed two genuine WCAG contrast defects (one locally, one CI-only), fixed several UI elements that silently no-op'd instead of honestly signaling their Stage 3 boundary, and pushed the completed work to GitHub, where it is now confirmed green on Actions. See §10–§11, §14, §20, and §23 for exactly what changed in this pass. The one remaining gap is Netlify deployment, which is blocked on interactive account login the project owner must perform themselves (§17, §21, §25).
 
 ## 1. Stage Objective
 
@@ -119,7 +119,7 @@ The initial Stage 2 pass could not verify mobile viewports because the interacti
 - Dialogs: the Tags "New tag" overlay (sheet on mobile, dialog on desktop) and the desktop Schedule-grid event-detail dialog stay within the viewport bounds at every width (8 checks).
 - Long content: the longest fixture strings ("Machine Learning Specialization", "Lecture 04 — Neural Networks") don't overflow at the narrowest width (320px).
 
-**Result: 151/151 passing.** One real responsive defect was found and fixed in the process (see §26.1 — the desktop Schedule grid's compact event cells clipped their content for 1-hour classes); the rest of the failures encountered while building this suite were test-authoring issues (animation-timing races, an over-strict pixel tolerance, ambiguous locators), corrected and documented in the test file's own comments and in §26.
+**Result: 151/151 passing.** One real responsive defect was found and fixed in the process — the desktop Schedule grid's compact event cells clipped attendance controls for 1-hour classes; fixed by collapsing settled attendance states behind a click-to-correct badge (`AttendanceControl.tsx`) and moving the full control into a `<Dialog>` opened from the grid cell (`WeekGrid.tsx`), rather than cramming three buttons into a narrow cell. The rest of the failures encountered while building this suite were test-authoring issues (animation-timing races, an over-strict pixel tolerance, ambiguous locators), each corrected and documented inline in the relevant `e2e/*.spec.ts` file's own comments.
 
 CSS breakpoints match `STAGE_1B_DESIGN_SYSTEM.md` §10 exactly (`src/styles/tokens.css` + `src/lib/breakpoints.ts` as the JS-side source of truth): mobile <600px, tablet 600–1024px, desktop ≥1024px, wide ≥1440px content-width cap.
 
@@ -156,7 +156,7 @@ Both databases and the full v1 schema from `DATA_MODEL.md` are declared in `src/
 **Verified for real, against a real (blocked) network:**
 - Manifest is valid, fetchable, and declares `standalone` display and a maskable icon.
 - Every icon referenced in the manifest resolves with `200` and the correct `image/png` content type.
-- The service worker reaches the actual `"activated"` state (not just `ready`, which can resolve a tick early — see §26.2).
+- The service worker reaches the actual `"activated"` state (not just `ready`, which can resolve while the worker is still `"activating"` — the test listens for the real `statechange` event instead of trusting `ready`'s resolution as proof of the terminal state).
 - The Cache Storage precache contains only static app-shell assets, never anything resembling an API/data path (there are none in this architecture, so this also guards against ever accidentally introducing one).
 - **With `context.setOffline(true)` (network requests genuinely blocked) and the page reloaded**, the full app shell renders — nav, Home's heading, the Overdue task list — from precache, not from a live network.
 - **With the network still blocked**, Settings correctly re-reads the active semester (`"Year 2 · Semester 1"`) from IndexedDB after a reload — proving Dexie-backed data survives a real offline reload, not just the static shell.
@@ -184,7 +184,9 @@ Vitest's config was scoped to `src/**/*.test.{ts,tsx}` (`vite.config.ts`) so its
 
 ## 16. CI Setup
 
-`.github/workflows/ci.yml`: on push/PR to `main`, runs `npm ci` (lockfile-deterministic), typecheck, lint, format check, unit test, build, then installs Playwright's Chromium and runs the E2E suite (uploading the HTML report as an artifact if anything fails). Least-privilege `permissions: contents: read`. CI result on GitHub: see §20 (this requires the push in this same finalization pass to have completed — check the Actions tab for the actual run once pushed).
+`.github/workflows/ci.yml`: on push/PR to `main`, runs `npm ci` (lockfile-deterministic), typecheck, lint, format check, unit test, build, then installs Playwright's Chromium and runs the E2E suite (uploading the HTML report as an artifact if anything fails). Least-privilege `permissions: contents: read`.
+
+**Real CI result:** the first push of this finalization pass (`20ea573`) ran on GitHub Actions (Ubuntu runner) and **failed** — not a flake, but two genuine defects the Windows-local run hadn't surfaced: a second WCAG AA contrast failure (`status/warning` on `status/warning-subtle`, 4.13:1, only visible because the fixture's wall-clock-relative "in progress" badge happened to be rendered during that run) and a real test race in the offline-data E2E test (`net::ERR_INTERNET_DISCONNECTED`, going offline before the service worker was confirmed to be controlling the page). Both were fixed for real (not routed around) in `1421f51`, which was pushed and re-run. That second run, [`30223267720`](https://github.com/omar-issam-abdelhalim/academic-os/actions/runs/30223267720), is **fully green** — every step, including the new E2E job, passed on Linux. See §20 for both commits and §10/§11/§14 for the underlying fixes.
 
 ## 17. Netlify / Deployment Setup
 
@@ -193,7 +195,7 @@ Vitest's config was scoped to `src/**/*.test.{ts,tsx}` (`vite.config.ts`) so its
 ## 18. Security Controls — Finalization Recheck
 
 Regression-checked against `SECURITY.md` specifically for what this finalization pass touched:
-- No unsafe HTML rendering introduced — no new `dangerouslySetInnerHTML`, no new HTML-string construction; the new "reference placeholder" click-feedback messages (§26.3) are plain React text/props, not HTML.
+- No unsafe HTML rendering introduced — no new `dangerouslySetInnerHTML`, no new HTML-string construction; the new "reference placeholder" click-feedback messages (§23) are plain React text/props, not HTML.
 - No dangerous URL handling introduced — the one new link (`StartNewSemesterScreen`'s "Export it first") was changed from a raw `<a href>` to a React Router `<Link>` for correctness, not a new external/untrusted URL.
 - No secrets, credentials, or committed local academic/user data — confirmed via `git status`/`git diff` review before staging (§20).
 - No new external network dependencies at runtime — `@playwright/test` and `@axe-core/playwright` are dev-only (`devDependencies`), never bundled into the shipped app (confirmed: neither appears in the production `dist/` output).
@@ -211,16 +213,21 @@ Still true from the initial pass: strict CSP (`default-src 'self'`, `script-src 
 
 ## 20. Git Commits Created
 
-Prior to this finalization pass, three commits existed on `main` (Stage 0 and its finalization, plus the Stage 1A/1B docs commit), all authored as `omar-issam-abdelhalim <omar.hq.eg@gmail.com>`. This pass adds:
+Prior to this finalization pass, four commits existed on `main` (Stage 0 and its finalization, the Stage 1A/1B docs commit, and the initial Stage 2 implementation commit), all authored as `omar-issam-abdelhalim <omar.hq.eg@gmail.com>`:
 
 4. `985f5eb` — `feat: Stage 2 engineering foundation, live UI system, PWA & CI` (the initial Stage 2 implementation commit, made before this finalization pass began)
-5. See the final chat response for this finalization pass's own commit hash and subject — created after this report was updated, per the documented workflow (verify → document → commit).
 
-All commits authored solely under the project owner's repo-local Git identity; no AI attribution anywhere (verified by grepping the full commit history, not just the new commit).
+This finalization pass added two more, both pushed to `origin/main` with the project owner's explicit authorization for this session:
+
+5. `20ea573` — `fix: Stage 2 finalization - real mobile/PWA/a11y verification, fixture-boundary fixes` — the bulk of this pass's work: Playwright E2E suite (151 tests), the `text/tertiary` contrast fix, the fixture-boundary "Add ..." button fixes, and the CI workflow update. Passed 43/43 unit and 151/151 E2E tests locally on Windows before being pushed, but **failed on GitHub Actions' Linux runner** (see §16) due to two environment-dependent defects this commit didn't yet fix.
+6. `1421f51` — `fix: resolve CI-discovered contrast defect and offline-test race` — fixes the two defects CI's first run on `20ea573` surfaced for real (a second WCAG contrast failure and an offline-test race condition; see §16, §10, §14). This commit's own CI run ([`30223267720`](https://github.com/omar-issam-abdelhalim/academic-os/actions/runs/30223267720)) is fully green.
+7. This documentation-finalization commit (updating this report's remaining sections to reflect the verified final state) — see the final chat response for its hash.
+
+All commits authored solely under the project owner's repo-local Git identity (`omar-issam-abdelhalim <omar.hq.eg@gmail.com>`); no AI attribution anywhere (verified by grepping the full commit history, not just the new commits). Local `main` tracks `origin/main` with a clean working tree confirmed after each push.
 
 ## 21. Production URL
 
-None yet — Netlify deployment remains blocked on interactive login (§17, unchanged this pass — see the final chat response for the exact next step).
+None yet. Netlify deployment remains blocked on interactive login: `npx netlify-cli status` was re-checked at the end of this finalization pass and still reports "Not logged in. Please log in to see project status." `netlify.toml` is complete and ready (§17); the only remaining step is the project owner running `netlify login` (opens a browser OAuth flow) or connecting the GitHub repo directly at app.netlify.com, neither of which can be done on their behalf. See §25.
 
 ## 22. Known Limitations (explicit, not hidden)
 
@@ -265,10 +272,15 @@ Not implemented, and not attempted: production Course/Unit/Content-Block/Task/Sc
 - [x] Automated accessibility scan (axe-core) of 4 representative pages — one real defect found and fixed (§11)
 - [ ] Installability formally checked via a browser's actual install-prompt UI — not attempted this session (manifest/icon/SW prerequisites are verified; the platform-native install affordance itself was not clicked through)
 - [x] CI workflow file is valid YAML, includes the E2E job, and mirrors the exact local commands that all pass
-- [ ] CI has not yet run on GitHub (no push yet)
-- [ ] Netlify not configured — blocked on interactive login (§17, §19)
+- [x] CI has run on GitHub for real — first run on `20ea573` failed (two genuine, environment-only defects; see §16), both fixed in `1421f51`, second run [`30223267720`](https://github.com/omar-issam-abdelhalim/academic-os/actions/runs/30223267720) is fully green
+- [x] Local `main` pushed to `origin/main`; tracking confirmed, working tree clean, no force-push/history rewrite
+- [ ] Netlify not configured — blocked on interactive login; `netlify.toml` is complete and ready (§17, §19, §21)
 - [x] Documentation updated and internally consistent (README, DEVELOPMENT, ROADMAP, this report)
 
 ## 25. Recommendation
 
-**APPROVE STAGE 2**, conditional on two follow-ups that don't block approval but should happen before Stage 3 leans on them: (1) a real narrow-viewport check of the mobile layouts (bottom nav, Week Overview, sheets) since this session's tooling couldn't resize the browser, and (2) completing the Netlify connection once the product owner has logged in (see the final chat message for the exact next step).
+Engineering quality for Stage 2 is **fully green and complete**: real cross-viewport responsive verification (151 Playwright tests, 320–1440px), real offline/PWA verification, an automated accessibility scan that found and fixed two genuine WCAG AA contrast defects, a fixture-boundary honesty audit and fix, and a full green run of typecheck/lint/format/unit tests/build/E2E — verified both locally and on a real GitHub Actions run after diagnosing and fixing a real CI-only failure rather than routing around it. Both finalization commits (`20ea573`, `1421f51`) are pushed to `origin/main` under the project owner's Git identity with no AI attribution.
+
+The single remaining gap is **external to the engineering work**: Netlify deployment cannot proceed without the project owner completing an interactive login (`netlify login`, or connecting the repo at app.netlify.com) — this cannot be performed on their behalf and is not an engineering defect.
+
+**STAGE 2 BLOCKED — OWNER ACTION REQUIRED**, solely for Netlify authentication. No code, test, or documentation follow-up is outstanding. Once the project owner runs `netlify login` (or links the GitHub repo via the Netlify dashboard) and confirms, deployment can be completed and this report updated with the resulting production URL — at which point Stage 2 should be considered ready for unconditional approval.
