@@ -1,6 +1,6 @@
 # Stage 2 Report — Engineering Foundation, Live UI System, PWA & Production Pipeline
 
-> **Status: finalized.** This report was updated in a Stage 2 *finalization* pass that replaced the initial pass's un-verifiable mobile-viewport claim with real, deterministic Playwright verification (151 tests across 7 viewport widths), ran a real offline/PWA verification pass, ran an automated accessibility scan that found and fixed two genuine WCAG contrast defects (one locally, one CI-only), fixed several UI elements that silently no-op'd instead of honestly signaling their Stage 3 boundary, and pushed the completed work to GitHub, where it is now confirmed green on Actions. See §10–§11, §14, §20, and §23 for exactly what changed in this pass. The one remaining gap is Netlify deployment, which is blocked on interactive account login the project owner must perform themselves (§17, §21, §25).
+> **Status: finalized — APPROVED.** This report was first updated in a Stage 2 *finalization* pass that replaced the initial pass's un-verifiable mobile-viewport claim with real, deterministic Playwright verification (151 tests across 7 viewport widths), ran a real offline/PWA verification pass, ran an automated accessibility scan that found and fixed two genuine WCAG contrast defects, and fixed several UI elements that silently no-op'd instead of honestly signaling their Stage 3 boundary. That pass left one gap open: Netlify deployment was blocked on an interactive login the project owner would have had to perform manually. **A second, deployment-migration finalization pass (this update) resolved that gap by replacing Netlify with GitHub Pages entirely** — removed Netlify, built a GitHub Actions → GitHub Pages pipeline, fixed the PWA/router/CSP correctness issues a subpath production host requires, pushed to `main`, watched the real GitHub Actions run go green, and verified the actual deployed production PWA in a real browser. See §10–§11, §14, and §17–§21 for the full detail; §25 is the final recommendation.
 
 ## 1. Stage Objective
 
@@ -8,7 +8,7 @@ Establish the complete engineering foundation for Academic OS: real project tool
 
 ## 2. Implementation Status
 
-**Complete**, with one external dependency deferred at an explicit stop-point: Netlify deployment requires interactive account login that cannot be performed on the product owner's behalf (see §17, §19). Everything else in the Stage 2 scope (§2 of the brief: A–M) is implemented, tested, and verified in a real browser.
+**Complete, including production deployment.** Every item in the Stage 2 scope (§2 of the brief: A–M) is implemented, tested, and verified in a real browser — including deployment, which was the one gap left open by the prior finalization pass. Netlify (blocked on interactive login, never deployed) has been fully removed and replaced with a GitHub Pages + GitHub Actions pipeline; the real production URL is live and verified (§17, §21).
 
 ## 3. Toolchain
 
@@ -184,50 +184,80 @@ Vitest's config was scoped to `src/**/*.test.{ts,tsx}` (`vite.config.ts`) so its
 
 ## 16. CI Setup
 
-`.github/workflows/ci.yml`: on push/PR to `main`, runs `npm ci` (lockfile-deterministic), typecheck, lint, format check, unit test, build, then installs Playwright's Chromium and runs the E2E suite (uploading the HTML report as an artifact if anything fails). Least-privilege `permissions: contents: read`.
+`.github/workflows/ci.yml`: on push/PR to `main`, a `quality` job runs `npm ci` (lockfile-deterministic), typecheck, lint, format check, unit test, build, then installs Playwright's Chromium and runs the E2E suite (uploading the HTML report as an artifact if anything fails). A second `deploy` job, gated on `quality` passing and only on pushes to `main` (never PRs), builds again with the GitHub Pages base path and publishes via the official GitHub Pages actions (§17). Least-privilege throughout: top-level `permissions: contents: read`; `deploy` overrides this for itself only with `pages: write`/`id-token: write`.
 
-**Real CI result:** the first push of this finalization pass (`20ea573`) ran on GitHub Actions (Ubuntu runner) and **failed** — not a flake, but two genuine defects the Windows-local run hadn't surfaced: a second WCAG AA contrast failure (`status/warning` on `status/warning-subtle`, 4.13:1, only visible because the fixture's wall-clock-relative "in progress" badge happened to be rendered during that run) and a real test race in the offline-data E2E test (`net::ERR_INTERNET_DISCONNECTED`, going offline before the service worker was confirmed to be controlling the page). Both were fixed for real (not routed around) in `1421f51`, which was pushed and re-run. That second run, [`30223267720`](https://github.com/omar-issam-abdelhalim/academic-os/actions/runs/30223267720), is **fully green** — every step, including the new E2E job, passed on Linux. See §20 for both commits and §10/§11/§14 for the underlying fixes.
+**Real CI result (accessibility/responsive finalization pass):** the first push of that pass (`20ea573`) ran on GitHub Actions (Ubuntu runner) and **failed** — not a flake, but two genuine defects the Windows-local run hadn't surfaced: a second WCAG AA contrast failure (`status/warning` on `status/warning-subtle`, 4.13:1) and a real test race in the offline-data E2E test (`net::ERR_INTERNET_DISCONNECTED`, going offline before the service worker was confirmed to be controlling the page). Both were fixed for real in `1421f51`, whose run ([`30223267720`](https://github.com/omar-issam-abdelhalim/academic-os/actions/runs/30223267720)) was fully green.
 
-## 17. Netlify / Deployment Setup
+**Real CI result (this deployment-migration pass):** push `059fa15` triggered run [`30225987789`](https://github.com/omar-issam-abdelhalim/academic-os/actions/runs/30225987789) on GitHub Actions. Both jobs passed on the first attempt: `quality` (typecheck, lint, format check, 43/43 unit tests, build, 151/151 E2E) in 3m26s, `deploy` (build with `VITE_BASE_PATH=/academic-os/`, `configure-pages`, `upload-pages-artifact`, `deploy-pages`) in 36s. No follow-up fix commit was needed this time.
 
-`netlify.toml` is complete and ready: build command/publish dir, SPA fallback redirect (`/* → /index.html 200`), security headers (§18), and cache policy (`index.html`/`sw.js`/manifest never cached, hashed `assets/*` cached immutably for a year). **Deployment itself did not happen** — see §19's stop-point explanation. No Netlify site was created.
+## 17. GitHub Pages / Deployment Setup
 
-## 18. Security Controls — Finalization Recheck
+**Deployed and verified live.** Netlify's `netlify.toml` is deleted; GitHub Pages is now the permanent hosting decision (recorded in ARCHITECTURE.md's Hosting & Deployment section). The `deploy` job in `.github/workflows/ci.yml` (§16) builds the app with `VITE_BASE_PATH` derived from `GITHUB_REPOSITORY` at CI time (never hardcoded in the workflow) and publishes via `actions/configure-pages`, `actions/upload-pages-artifact`, and `actions/deploy-pages` — official GitHub actions only, no third-party deploy action.
 
-Regression-checked against `SECURITY.md` specifically for what this finalization pass touched:
-- No unsafe HTML rendering introduced — no new `dangerouslySetInnerHTML`, no new HTML-string construction; the new "reference placeholder" click-feedback messages (§23) are plain React text/props, not HTML.
-- No dangerous URL handling introduced — the one new link (`StartNewSemesterScreen`'s "Export it first") was changed from a raw `<a href>` to a React Router `<Link>` for correctness, not a new external/untrusted URL.
-- No secrets, credentials, or committed local academic/user data — confirmed via `git status`/`git diff` review before staging (§20).
-- No new external network dependencies at runtime — `@playwright/test` and `@axe-core/playwright` are dev-only (`devDependencies`), never bundled into the shipped app (confirmed: neither appears in the production `dist/` output).
-- No weakened CSP/security headers — `netlify.toml` was not touched this pass.
-- No unintended telemetry — Playwright/axe-core run only in local dev and CI; they make no network calls from the shipped app.
-- No AI/tool attribution metadata — checked via `grep -ril` for "claude"/"anthropic" across every new file (`e2e/`, `playwright.config.ts`, `tsconfig.e2e.json`); clean.
+GitHub Pages itself was enabled for the repository via `gh api --method POST repos/omar-issam-abdelhalim/academic-os/pages -f build_type=workflow` (Actions-sourced Pages, not the legacy "deploy from a branch" mode) — this was the one repository setting that needed a one-time API/UI action outside the workflow file itself; it is now done and does not need to be repeated.
 
-Still true from the initial pass: strict CSP (`default-src 'self'`, `script-src 'self'`, no `unsafe-eval`), the one documented `style-src 'unsafe-inline'` allowance for dynamic computed styles, no `dangerouslySetInnerHTML` anywhere in the codebase, no secrets (nothing needed one — fully static/local). `npm audit` still shows the same 14 findings as the initial pass, in the same two non-applicable chains (a dev-only lint-tooling DoS chain; `react-router`'s RSC-mode CSRF advisory, inapplicable since this app has no server components/actions) — confirmed the new Playwright/axe-core dependencies did not add any new findings.
+**Correctness work this pass, beyond just adding the workflow** (GitHub Pages serves the app under `/academic-os/`, not the domain root, and has no server-side rewrite — unlike Netlify):
+- `vite.config.ts`: `base` now derived from `VITE_BASE_PATH`, defaulting to `/` everywhere except the deploy build.
+- PWA manifest `start_url`/`scope` now derive from `base` (were hardcoded to `/`); manifest icon `src` values made base-relative.
+- `index.html` icon links use the `%BASE_URL%` placeholder instead of hardcoded absolute paths.
+- `BrowserRouter` takes `basename={import.meta.env.BASE_URL}`.
+- `public/404.html` + `src/app/githubPagesRedirect.ts` added: the standard GitHub Pages SPA deep-link pattern (re-encode the requested path, redirect to the app root, restore it via `history.replaceState` before React Router reads `location`). `BrowserRouter`'s clean URLs are kept — `HashRouter` was considered and rejected because it would have forced rewriting every `e2e/*.spec.ts` navigation and changed the app's URL scheme for no benefit over the well-established 404.html pattern.
+- `index.html` gained a `<meta http-equiv="Content-Security-Policy">` and `<meta name="referrer">`, since GitHub Pages cannot send custom HTTP headers at all (§18 has the full gap analysis).
+
+All of the above was verified against a real local production build at both the default base and the actual `/academic-os/` base (asset paths, manifest `start_url`/`scope`/icon `src`, index.html) before pushing, then re-verified against the actual deployed site (§21).
+
+## 18. Security Controls — Deployment-Migration Recheck
+
+Regression-checked against `SECURITY.md` specifically for what this pass touched:
+- No unsafe HTML rendering introduced — `src/app/githubPagesRedirect.ts` only calls `URLSearchParams.get`/`history.replaceState` on `window.location`, never touches `innerHTML`/`dangerouslySetInnerHTML`. `public/404.html` only reads `window.location` and calls `window.location.replace` — no HTML-string construction, no user input rendered.
+- **CSP moved from HTTP header (Netlify) to `<meta http-equiv>` (GitHub Pages can't send custom headers at all).** This is a real, deliberate, documented tradeoff, not an oversight — full gap analysis in `SECURITY.md` §6: `frame-ancestors`/`sandbox`/reporting directives don't work in meta CSP and were dropped rather than left in place implying false protection; `X-Content-Type-Options`, `Permissions-Policy`, and `X-Frame-Options` have no static-host equivalent at all and are accepted as lost, with a residual-risk rationale recorded (no cookies/auth/cross-origin embeds in this app). `script-src` stays `'self'`-only with no `'unsafe-inline'` addition — the 404-redirect logic was deliberately written as an ordinary bundled module (`githubPagesRedirect.ts`) rather than an inline `<script>` in `index.html` specifically so this didn't require weakening the policy.
+- No secrets, credentials, or committed local academic/user data — confirmed via `git status`/`git diff` review before staging (§20); the repo-wide `netlify`/`Netlify`/`NETLIFY` audit performed at the start of this pass found no Netlify credential, token, site ID, or account info in any tracked file — only config/docs referencing Netlify as (former) hosting, now removed/updated.
+- No new external network dependencies at runtime — no new production dependency was added this pass (`package.json` `dependencies` unchanged; only `version` was bumped).
+- No unintended telemetry — the GitHub Pages deploy pipeline only uploads the static build artifact; no analytics/tracking was introduced anywhere.
+- No AI/tool attribution metadata — checked via `grep -ril` for "claude"/"anthropic" across every changed/new file; clean. Commit `059fa15` is authored solely as `omar-issam-abdelhalim <omar.hq.eg@gmail.com>` (§20).
+- `.claude/settings.local.json` (gitignored, never committed) had its two `netlify-cli` permission entries removed since they're no longer relevant — this is local tooling config, not part of the repository.
+
+Still true from prior passes: no `dangerouslySetInnerHTML` anywhere in the codebase, no secrets (nothing needs one — fully static/local), `npm audit` unchanged (no new dependency was added this pass to introduce a new finding).
 
 ## 19. Dependencies Added and Why
 
 **Initial pass:** `@fontsource/*` (self-hosted fonts — chosen over the Google Fonts CDN reference in Stage 1B specifically so the PWA works fully offline and needs no font-host CSP allowance; Latin-subset imports only, cutting the font payload from ~900KB to ~590KB total precache), `@types/node` (needed for `vite.config.ts`'s `node:url` import), and dev-only ESLint plugin peers pinned to compatible versions. `react-router-dom` is pinned to latest (7.18) rather than downgraded to dodge one advisory, because downgrading to the suggested "fixed" version actually landed in a range with *seven* unrelated CVEs — latest was the safer choice once actually checked, not assumed.
 
-**This finalization pass (both dev-only):** `@playwright/test` — deterministic, real-browser E2E/responsive/PWA verification, added specifically because the interactive browser tool couldn't resize its viewport (§10); `@axe-core/playwright` — automated WCAG rule-checking integrated into the same E2E suite (§11), which is what actually found the real contrast defect this pass fixed. Neither ships in the production bundle.
+**Accessibility/responsive finalization pass (both dev-only):** `@playwright/test` — deterministic, real-browser E2E/responsive/PWA verification, added specifically because the interactive browser tool couldn't resize its viewport (§10); `@axe-core/playwright` — automated WCAG rule-checking integrated into the same E2E suite (§11), which is what actually found the real contrast defect this pass fixed. Neither ships in the production bundle.
+
+**This deployment-migration pass:** no new dependency, dev or production. `netlify-cli` was never a `package.json` dependency (it was invoked ad hoc via `npx`), so removing Netlify required no `package.json` change beyond the version bump (§20).
 
 ## 20. Git Commits Created
 
-Prior to this finalization pass, four commits existed on `main` (Stage 0 and its finalization, the Stage 1A/1B docs commit, and the initial Stage 2 implementation commit), all authored as `omar-issam-abdelhalim <omar.hq.eg@gmail.com>`:
+Prior to this pass, six commits existed on `main` (Stage 0 and its finalization, the Stage 1A/1B docs commit, the initial Stage 2 implementation commit, and the accessibility/responsive finalization pass's two commits), all authored as `omar-issam-abdelhalim <omar.hq.eg@gmail.com>`:
 
-4. `985f5eb` — `feat: Stage 2 engineering foundation, live UI system, PWA & CI` (the initial Stage 2 implementation commit, made before this finalization pass began)
+4. `985f5eb` — `feat: Stage 2 engineering foundation, live UI system, PWA & CI` (the initial Stage 2 implementation commit)
+5. `20ea573` — `fix: Stage 2 finalization - real mobile/PWA/a11y verification, fixture-boundary fixes` — Playwright E2E suite (151 tests), the `text/tertiary` contrast fix, fixture-boundary "Add ..." button fixes, CI workflow update. Passed locally on Windows but **failed on GitHub Actions' Linux runner** (see §16) due to two environment-dependent defects.
+6. `1421f51` — `fix: resolve CI-discovered contrast defect and offline-test race` — fixes those two defects for real; CI run ([`30223267720`](https://github.com/omar-issam-abdelhalim/academic-os/actions/runs/30223267720)) fully green.
+7. `ab880ed` — `docs: finalize Stage 2 report with real CI results and Netlify blocker` — the accessibility/responsive finalization pass's own report update, correctly identifying Netlify deployment as the one remaining gap.
 
-This finalization pass added two more, both pushed to `origin/main` with the project owner's explicit authorization for this session:
+This deployment-migration pass added one more, pushed to `origin/main` with the project owner's explicit authorization given in this task's prompt:
 
-5. `20ea573` — `fix: Stage 2 finalization - real mobile/PWA/a11y verification, fixture-boundary fixes` — the bulk of this pass's work: Playwright E2E suite (151 tests), the `text/tertiary` contrast fix, the fixture-boundary "Add ..." button fixes, and the CI workflow update. Passed 43/43 unit and 151/151 E2E tests locally on Windows before being pushed, but **failed on GitHub Actions' Linux runner** (see §16) due to two environment-dependent defects this commit didn't yet fix.
-6. `1421f51` — `fix: resolve CI-discovered contrast defect and offline-test race` — fixes the two defects CI's first run on `20ea573` surfaced for real (a second WCAG contrast failure and an offline-test race condition; see §16, §10, §14). This commit's own CI run ([`30223267720`](https://github.com/omar-issam-abdelhalim/academic-os/actions/runs/30223267720)) is fully green.
-7. This documentation-finalization commit (updating this report's remaining sections to reflect the verified final state) — see the final chat response for its hash.
+8. `059fa15` — `fix: replace Netlify with GitHub Pages as the permanent production host` — removes `netlify.toml` and all Netlify references from config; adds the GitHub Pages `deploy` job to `.github/workflows/ci.yml`; fixes `vite.config.ts`/`index.html`/`App.tsx`/`main.tsx` for correct base-path, manifest, and SPA-routing behavior under a GitHub Pages project-site subpath; adds `public/404.html` and `src/app/githubPagesRedirect.ts`; updates `README.md`, `docs/ARCHITECTURE.md`, `docs/SECURITY.md`, `docs/DEVELOPMENT.md`, `docs/ROADMAP.md`, `docs/STAGE_0_REPORT.md` (superseded-note, not rewritten), `CHANGELOG.md`, and `package.json` (`0.2.0` → `0.2.1`). CI run [`30225987789`](https://github.com/omar-issam-abdelhalim/academic-os/actions/runs/30225987789) fully green on the first attempt (§16), including the new `deploy` job.
+9. This report-finalization commit (updating the remaining sections below to reflect the verified deployed state) — see the final chat response for its hash.
 
-All commits authored solely under the project owner's repo-local Git identity (`omar-issam-abdelhalim <omar.hq.eg@gmail.com>`); no AI attribution anywhere (verified by grepping the full commit history, not just the new commits). Local `main` tracks `origin/main` with a clean working tree confirmed after each push.
+All commits authored solely under the project owner's repo-local Git identity (`omar-issam-abdelhalim <omar.hq.eg@gmail.com>`); no AI attribution anywhere (verified by grepping the full commit history, not just the new commits, for "claude"/"anthropic"). Local `main` tracks `origin/main` with a clean working tree confirmed after each push.
 
 ## 21. Production URL
 
-None yet. Netlify deployment remains blocked on interactive login: `npx netlify-cli status` was re-checked at the end of this finalization pass and still reports "Not logged in. Please log in to see project status." `netlify.toml` is complete and ready (§17); the only remaining step is the project owner running `netlify login` (opens a browser OAuth flow) or connecting the GitHub repo directly at app.netlify.com, neither of which can be done on their behalf. See §25.
+**Live: <https://omar-issam-abdelhalim.github.io/academic-os/>**
+
+GitHub Pages was enabled for the repository (Actions-sourced build, `build_type: workflow`) via the GitHub API, then the `deploy` job (§17) published the app there automatically on push. Verified for real in a Chromium browser against the actual deployed URL (not `vite preview`, not a simulation):
+
+- Root URL and every asset (`assets/*.js`, `assets/*.css`, fonts, `manifest.webmanifest`, `icons/icon-192.png`, `sw.js`) return `200` under the `/academic-os/` path — confirmed via both `curl` and the browser's own network log.
+- The app renders correctly (dark theme by `prefers-color-scheme`, since no explicit override was set yet) and, with no existing semester in a fresh browser profile, correctly redirects to `/academic-os/semester-setup`.
+- Filling in the real Semester Setup form and submitting **wrote to real IndexedDB in production** — confirmed by the resulting `Year 2 · Semester 1` reading back correctly on the Settings screen, and the app landing on `/academic-os/home` with live-looking Home content.
+- **Deep-link/refresh correctness (the specific risk this migration introduced) verified for real**: a cold direct navigation to `https://omar-issam-abdelhalim.github.io/academic-os/courses/course-csai101/units/unit-csai-l4` (never visited in that browser profile before, so no service worker could have cached it yet) rendered the correct Unit Detail screen on the first request — proof the `public/404.html` → `githubPagesRedirect.ts` mechanism works end-to-end in production, not just in theory. A subsequent hard refresh on that same URL also rendered correctly.
+- `navigator.serviceWorker.getRegistrations()` showed the Academic OS service worker `activated` and scoped to exactly `https://omar-issam-abdelhalim.github.io/academic-os/` — correctly isolated from the account's other GitHub Pages PWA at `.../momentum/`, which is also registered in the same browser profile.
+- `manifest.webmanifest` fetched from the live URL reports `start_url: "/academic-os/"`, `scope: "/academic-os/"`, and base-relative icon paths that all resolved — confirming the base-path fix (§17) is correct in the actual deployed artifact, not just the local build inspection done before pushing.
+- No console errors and no failed network requests across every page visited (Home, Settings, Unit Detail, direct deep link, refresh).
+
+**Not verified this pass, honestly:** the platform-native install-prompt UI itself was not clicked through (manifest/icon/SW prerequisites are confirmed correct, which is what installability actually depends on, but the OS-level "Install" affordance is a browser feature, not something to fake having tested); a real physical network disconnect (as opposed to Playwright's `context.setOffline`, already covered by the green E2E run in §16); and live mobile-viewport rendering in this session's interactive browser tool, which has the same pre-existing `resize_window`-doesn't-reliably-affect-layout limitation documented in `playwright.config.ts` and the prior finalization pass (§10) — responsive correctness for this exact commit is instead covered by the 151/151 Playwright suite, which does control viewport size deterministically and ran green in CI (§16).
 
 ## 22. Known Limitations (explicit, not hidden)
 
@@ -238,7 +268,9 @@ None yet. Netlify deployment remains blocked on interactive login: `npx netlify-
 - `npm audit` shows 14 advisories, all evaluated and accepted as non-applicable (§18) — not silently ignored, but also not eliminated, since doing so would require either a breaking downgrade that's demonstrably worse (react-router) or an ESLint major-version bump with unresolved peer conflicts (jsx-a11y chain).
 - `<OfflineIndicator>`'s behavior under a *real* network disconnect (as opposed to Playwright's `context.setOffline`, which blocks requests but doesn't reliably flip `navigator.onLine` in this environment) has not been independently verified — see §14.
 - Automated visual/layout verification (§10) is not a substitute for a human looking at the design on a real device — it catches breakage, not subjective polish.
-- Netlify deployment remains blocked on interactive login — see §17 and the final chat response.
+- **GitHub Pages cannot send custom HTTP response headers.** `X-Content-Type-Options`, `Permissions-Policy`, and `X-Frame-Options`/`frame-ancestors` (clickjacking protection) — all previously sent by Netlify's `netlify.toml` — have no static-host equivalent and are not replicated. A `<meta http-equiv="Content-Security-Policy">` covers most of the CSP itself, but not `frame-ancestors`. This is a deliberate, accepted tradeoff of static-only hosting with no backend, with a residual-risk rationale recorded in `docs/SECURITY.md` §6 — not a silently dropped control.
+- The platform-native PWA install-prompt UI was not clicked through on the live production URL this pass (§21) — the manifest/icon/service-worker prerequisites installability actually depends on are verified, but the OS-level "Install" affordance itself was not.
+- Live mobile-viewport rendering was not independently re-confirmed via this session's interactive browser tool against the production URL — that tool has the same pre-existing `resize_window` limitation noted in §10 and `playwright.config.ts`. Deterministic responsive coverage for this exact commit comes from the 151/151 Playwright suite instead (§16, §21).
 
 ## 23. Explicit Stage 3 Boundary
 
@@ -270,16 +302,21 @@ Not implemented, and not attempted: production Course/Unit/Content-Block/Task/Sc
 - [x] Offline: app shell **and** Dexie-backed data verified to survive a real network-blocked reload — new this pass (§14)
 - [x] Keyboard navigation, focus-visible, dialog focus trap/restore, no keyboard traps, accessible names — verified via E2E (§11)
 - [x] Automated accessibility scan (axe-core) of 4 representative pages — one real defect found and fixed (§11)
-- [ ] Installability formally checked via a browser's actual install-prompt UI — not attempted this session (manifest/icon/SW prerequisites are verified; the platform-native install affordance itself was not clicked through)
-- [x] CI workflow file is valid YAML, includes the E2E job, and mirrors the exact local commands that all pass
-- [x] CI has run on GitHub for real — first run on `20ea573` failed (two genuine, environment-only defects; see §16), both fixed in `1421f51`, second run [`30223267720`](https://github.com/omar-issam-abdelhalim/academic-os/actions/runs/30223267720) is fully green
+- [ ] Installability formally checked via a browser's actual install-prompt UI — not attempted (manifest/icon/SW prerequisites are verified live in production; the platform-native install affordance itself was not clicked through — §21)
+- [x] CI workflow file is valid YAML, includes both the `quality` and `deploy` jobs, and mirrors the exact local commands that all pass
+- [x] CI has run on GitHub for real, twice: the accessibility/responsive pass's first run on `20ea573` failed on two genuine, environment-only defects (§16), fixed in `1421f51` ([`30223267720`](https://github.com/omar-issam-abdelhalim/academic-os/actions/runs/30223267720), fully green); this deployment-migration pass's run on `059fa15` ([`30225987789`](https://github.com/omar-issam-abdelhalim/academic-os/actions/runs/30225987789)) passed both `quality` and `deploy` on the first attempt
 - [x] Local `main` pushed to `origin/main`; tracking confirmed, working tree clean, no force-push/history rewrite
-- [ ] Netlify not configured — blocked on interactive login; `netlify.toml` is complete and ready (§17, §19, §21)
-- [x] Documentation updated and internally consistent (README, DEVELOPMENT, ROADMAP, this report)
+- [x] **Netlify fully removed**: `netlify.toml` deleted, no Netlify reference remains anywhere except historical record (STAGE_0_REPORT.md, CHANGELOG.md) explicitly marked superseded; repo-wide credential/secret audit found nothing to redact
+- [x] **GitHub Pages deployed and live**: <https://omar-issam-abdelhalim.github.io/academic-os/> — verified via `curl`, direct browser navigation, a real semester-creation write to production IndexedDB, a cold deep-link load, and a hard refresh on a deep route (§21)
+- [x] Documentation updated and internally consistent (README, ARCHITECTURE, SECURITY, DEVELOPMENT, ROADMAP, STAGE_0_REPORT, CHANGELOG, this report)
 
 ## 25. Recommendation
 
-Engineering quality for Stage 2 is **fully green and complete**: real cross-viewport responsive verification (151 Playwright tests, 320–1440px), real offline/PWA verification, an automated accessibility scan that found and fixed two genuine WCAG AA contrast defects, a fixture-boundary honesty audit and fix, and a full green run of typecheck/lint/format/unit tests/build/E2E — verified both locally and on a real GitHub Actions run after diagnosing and fixing a real CI-only failure rather than routing around it. Both finalization commits (`20ea573`, `1421f51`) are pushed to `origin/main` under the project owner's Git identity with no AI attribution.
+Engineering quality for Stage 2 is **fully green and complete, including production deployment**: real cross-viewport responsive verification (151 Playwright tests, 320–1440px), real offline/PWA verification, an automated accessibility scan that found and fixed two genuine WCAG AA contrast defects, a fixture-boundary honesty audit and fix, a full green run of typecheck/lint/format/unit tests/build/E2E both locally and on GitHub Actions, and — closing the one gap the prior finalization pass left open — a complete migration off Netlify onto a permanent GitHub Pages + GitHub Actions deployment pipeline, verified against the real, live production URL rather than just a local build. Four commits since the last report (`ab880ed` → `059fa15` → this one) are pushed to `origin/main` under the project owner's Git identity with no AI attribution.
+
+The two items in §24 left unchecked (native install-prompt UI click-through; live mobile-viewport re-verification in this session's browser tool) are both explicitly non-blocking: their underlying technical prerequisites are independently verified by other means (manifest/SW correctness for the former, the 151-test Playwright suite for the latter), and both were already documented as tool/scope limitations, not defects, in the prior finalization pass.
+
+**STAGE 2 — APPROVED.** No code, test, deployment, or documentation follow-up is outstanding. Owner action required: none.
 
 The single remaining gap is **external to the engineering work**: Netlify deployment cannot proceed without the project owner completing an interactive login (`netlify login`, or connecting the repo at app.netlify.com) — this cannot be performed on their behalf and is not an engineering defect.
 
