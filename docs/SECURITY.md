@@ -13,18 +13,18 @@ This is a **static, backend-less SPA**: the deployed artifact is HTML/CSS/JS ser
   - Render via **parse-then-sanitize**: a Markdown parser turns the source into a restricted node/element set, and the result is either (a) rendered through a component-based renderer that never touches `innerHTML` (a React-Markdown-style renderer mapping AST nodes to React elements is the safest shape), or (b) if any HTML-string step is ever used, passed through an HTML sanitizer (e.g. DOMPurify) with a strict allow-list before it touches the DOM.
   - Raw HTML embedded in a note's Markdown source (e.g. `<script>`, `<iframe>`, `onerror=` attributes) must never execute — it is stripped or rendered as inert escaped text, never passed through.
   - Links produced by the Markdown renderer are still subject to the scheme-validation rule below (`http:`/`https:` only).
-  - No specific Markdown/editor library is chosen in Stage 0 — this is a Stage 3 implementation decision, constrained by the safety requirements above.
+  - **Implemented (Stage 3):** `src/lib/safeMarkdown.tsx` — a small hand-written parser that builds React elements directly from source text (never an HTML string, never `dangerouslySetInnerHTML`), satisfying (a) above by construction rather than by relying on a sanitizer to catch mistakes. No third-party Markdown/editor library was added.
 - User-entered strings that end up as `href`/`src` (e.g. a pasted link in a course description, or a link inside a rich-text note) must be scheme-validated (`http:`/`https:` only) before being rendered as a clickable link — `javascript:` and other dangerous schemes are rejected.
 
 ## 2. File & Blob Handling
 
-- Uploaded files are validated by declared MIME type and a size cap appropriate to the block type (image/file/video) before being accepted into a ContentBlock; the app trusts neither the file extension nor the MIME type alone as proof of content, only as an intake filter.
+- **Implemented (Stage 3):** `src/domain/contentValidation.ts` — uploaded files are validated by declared MIME type (an allow-listed prefix per block type) and a size cap appropriate to the block type (15 MB image / 30 MB file / 250 MB video) before being accepted into a ContentBlock; the app trusts neither the file extension nor the MIME type alone as proof of content, only as an intake filter.
 - Files are stored and served as opaque `Blob`s via `URL.createObjectURL` for local rendering; the app never executes, evals, or interprets uploaded content as code, and object URLs are revoked when no longer displayed to avoid leaking memory/handles.
 - PDFs/videos are rendered via the browser's native viewer/`<video>` element, not a custom parser, to avoid introducing a parsing attack surface in the app itself.
 
 ## 3. Import / Archive Handling — Untrusted Input
 
-Any imported semester archive or media zip is treated as **fully untrusted**, even if the user is importing their own historical export:
+**Not yet implemented — Import remains out of scope through Stage 3** (PRODUCT_SPEC.md §18 marks it explicitly "future"). What Stage 3 *did* add: the versioned Zod schema itself (`src/domain/archive.ts`, `semesterArchiveSchema`) and Semester Export's self-check (the freshly built archive is parsed back through the same schema before download, per §10 below) — Import's eventual implementation validates untrusted input against this same, already-proven contract rather than starting from nothing. Any imported semester archive or media zip must still be treated as **fully untrusted**, even if the user is importing their own historical export, when that work begins:
 
 - Parse defensively: `JSON.parse` wrapped in try/catch, with a clear "this file couldn't be read" failure path — never a crash.
 - Validate the parsed structure against a versioned Zod schema **before** any of it touches application state; unknown/missing/mismatched top-level shape is rejected with a specific error, not silently coerced.
@@ -80,7 +80,7 @@ There are no backend secrets in this architecture — the app is 100% static and
 ## 10. Data Corruption & Backup Validation
 
 - Repository-layer reads are defensive: a record that fails schema expectations on read is surfaced as a recoverable error (e.g. "this record looks corrupted, skipped") rather than crashing the whole app or being silently deleted.
-- Exported archives are validated at export time too (self-check: what we just wrote parses and round-trips) as a cheap early warning of a serialization bug, in addition to import-time validation.
+- **Implemented (Stage 3):** exported archives are validated at export time too (`exportRepository.ts`'s `buildSemesterArchive` runs the freshly built archive back through `parseSemesterArchive` before it's ever downloaded) — self-check: what we just wrote parses and round-trips, a cheap early warning of a serialization bug, in addition to the (not-yet-implemented) import-time validation this same schema will serve later.
 - Schema migrations (Dexie `.upgrade()`) are additive and non-destructive by default (see DATA_MODEL.md §"Atomicity & migrations") — an app update must never be able to silently wipe a semester's worth of work.
 
 ## Privacy

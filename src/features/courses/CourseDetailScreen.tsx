@@ -1,21 +1,37 @@
 import { useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { Plus, ChevronRight, Clock, MapPin } from "lucide-react";
+import { useLiveQuery } from "dexie-react-hooks";
+import { Plus, ChevronRight, Clock, MapPin, MoreVertical, Pencil, Trash2 } from "lucide-react";
 import { ScreenHeader } from "@/app/ScreenHeader";
-import { IconButton, SegmentedControl, TagChip, EmptyState, StatusBadge } from "@/components";
+import {
+  IconButton,
+  SegmentedControl,
+  TagChip,
+  EmptyState,
+  Menu,
+  ConfirmationDialog,
+} from "@/components";
 import { TaskRow } from "@/features/shared/TaskRow";
-import { useFixtureTasks } from "@/features/shared/useFixtureTasks";
+import { useTasks } from "@/features/shared/useTasks";
 import { GradesSection } from "@/features/grades/GradesSection";
 import { PracticeSection } from "@/features/practice/PracticeSection";
+import { CourseFormSheet } from "./CourseFormSheet";
+import { UnitFormSheet } from "./UnitFormSheet";
+import { ScheduleTemplateFormSheet } from "@/features/schedule/ScheduleTemplateFormSheet";
+import { getCourse, updateCourse, deleteCourse } from "@/data/repositories/courseRepository";
+import { listUnitsForCourse, createUnit } from "@/data/repositories/unitRepository";
+import { listTags } from "@/data/repositories/tagRepository";
 import {
-  courseById,
-  unitsForCourse,
-  tagById,
-  fixtureGradeCategories,
-  fixtureGradeEntries,
-  fixturePracticeEntries,
-  fixtureScheduleTemplates,
-} from "@/fixtures";
+  listTemplatesForCourse,
+  createTemplate,
+  deleteTemplate,
+} from "@/data/repositories/scheduleRepository";
+import {
+  listCategoriesForCourse,
+  listEntriesForCourse,
+  listBoundariesForCourse,
+} from "@/data/repositories/gradeRepository";
+import { listPracticeForCourse } from "@/data/repositories/practiceRepository";
 import { DAY_LABELS, bucketForDate } from "@/domain/academicWeek";
 import styles from "./CourseDetailScreen.module.css";
 
@@ -31,20 +47,42 @@ const SECTIONS: { value: Section; label: string }[] = [
 
 /**
  * Course Detail (STAGE_1A_UX_ARCHITECTURE.md §H): header + default Units
- * body + a compact segmented control swapping content in place — never a
- * full 6-tab bar, never a full-page navigation away from the header.
+ * body + a compact segmented control swapping content in place. Backed by
+ * real repositories (Stage 3) — Units, Tasks, Schedule, Grades, and
+ * Practice all read/write the same Dexie tables every other screen uses,
+ * so changes here are reflected everywhere else immediately.
  */
 export function CourseDetailScreen() {
   const { courseId } = useParams<{ courseId: string }>();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { tasks, toggle } = useFixtureTasks();
-  const [message, setMessage] = useState<string | null>(null);
+  const { tasks, toggle } = useTasks();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [addUnitOpen, setAddUnitOpen] = useState(false);
+  const [addClassOpen, setAddClassOpen] = useState(false);
 
-  const course = courseId ? courseById(courseId) : undefined;
+  const course = useLiveQuery(() => (courseId ? getCourse(courseId) : undefined), [courseId]);
+  const tags = useLiveQuery(() => listTags(), []) ?? [];
+  const units =
+    useLiveQuery(() => (courseId ? listUnitsForCourse(courseId) : []), [courseId]) ?? [];
+  const templates =
+    useLiveQuery(() => (courseId ? listTemplatesForCourse(courseId) : []), [courseId]) ?? [];
+  const categories =
+    useLiveQuery(() => (courseId ? listCategoriesForCourse(courseId) : []), [courseId]) ?? [];
+  const entries =
+    useLiveQuery(() => (courseId ? listEntriesForCourse(courseId) : []), [courseId]) ?? [];
+  const boundaries =
+    useLiveQuery(() => (courseId ? listBoundariesForCourse(courseId) : []), [courseId]) ?? [];
+  const practice =
+    useLiveQuery(() => (courseId ? listPracticeForCourse(courseId) : []), [courseId]) ?? [];
+
   const section = (searchParams.get("section") as Section) || "units";
 
-  if (!course) {
+  if (course === undefined) return null;
+
+  if (!course || !courseId) {
     return (
       <div>
         <ScreenHeader title="Course" back />
@@ -55,12 +93,7 @@ export function CourseDetailScreen() {
     );
   }
 
-  const units = unitsForCourse(course.id);
   const courseTasks = tasks.filter((t) => t.courseId === course.id);
-  const courseTemplates = fixtureScheduleTemplates.filter((s) => s.courseId === course.id);
-  const courseCategories = fixtureGradeCategories.filter((c) => c.courseId === course.id);
-  const courseEntries = fixtureGradeEntries.filter((e) => e.courseId === course.id);
-  const coursePractice = fixturePracticeEntries.filter((p) => p.courseId === course.id);
 
   function setSection(next: Section) {
     setSearchParams(next === "units" ? {} : { section: next });
@@ -68,7 +101,37 @@ export function CourseDetailScreen() {
 
   return (
     <div>
-      <ScreenHeader title={course.name} back />
+      <ScreenHeader
+        title={course.name}
+        back
+        action={
+          <div className={styles.menuAnchor}>
+            <IconButton aria-label="Course options" onClick={() => setMenuOpen((o) => !o)}>
+              <MoreVertical size={18} strokeWidth={1.5} aria-hidden="true" />
+            </IconButton>
+            <Menu
+              open={menuOpen}
+              onClose={() => setMenuOpen(false)}
+              align="end"
+              label="Course options"
+              items={[
+                {
+                  key: "edit",
+                  label: "Edit course",
+                  icon: <Pencil size={16} strokeWidth={1.5} aria-hidden="true" />,
+                  onSelect: () => setEditOpen(true),
+                },
+                {
+                  key: "delete",
+                  label: "Delete course",
+                  icon: <Trash2 size={16} strokeWidth={1.5} aria-hidden="true" />,
+                  onSelect: () => setDeleteOpen(true),
+                },
+              ]}
+            />
+          </div>
+        }
+      />
       <div className={styles.content}>
         <header className={styles.courseHeader}>
           <h2 className={styles.courseTitle}>{course.name}</h2>
@@ -79,7 +142,7 @@ export function CourseDetailScreen() {
           {course.tagIds.length > 0 && (
             <div className={styles.tags}>
               {course.tagIds.map((id) => {
-                const tag = tagById(id);
+                const tag = tags.find((t) => t.id === id);
                 return tag ? <TagChip key={id} label={tag.name} color={tag.color} /> : null;
               })}
             </div>
@@ -98,15 +161,7 @@ export function CourseDetailScreen() {
             {section === "units" && (
               <>
                 <div className={styles.sectionToolbar}>
-                  {message && <StatusBadge tone="info">{message}</StatusBadge>}
-                  <IconButton
-                    aria-label="Add unit"
-                    onClick={() =>
-                      setMessage(
-                        "Creating units arrives in Stage 3 — this button is a reference placeholder for now.",
-                      )
-                    }
-                  >
+                  <IconButton aria-label="Add unit" onClick={() => setAddUnitOpen(true)}>
                     <Plus size={18} strokeWidth={1.5} aria-hidden="true" />
                   </IconButton>
                 </div>
@@ -142,6 +197,14 @@ export function CourseDetailScreen() {
 
             {section === "tasks" && (
               <>
+                <div className={styles.sectionToolbar}>
+                  <IconButton
+                    aria-label="Add task"
+                    onClick={() => navigate(`/tasks?newTaskCourseId=${course.id}`)}
+                  >
+                    <Plus size={18} strokeWidth={1.5} aria-hidden="true" />
+                  </IconButton>
+                </div>
                 {courseTasks.length === 0 ? (
                   <EmptyState title="No tasks for this course yet" />
                 ) : (
@@ -169,11 +232,19 @@ export function CourseDetailScreen() {
 
             {section === "schedule" && (
               <>
-                {courseTemplates.length === 0 ? (
+                <div className={styles.sectionToolbar}>
+                  <IconButton
+                    aria-label="Add recurring class"
+                    onClick={() => setAddClassOpen(true)}
+                  >
+                    <Plus size={18} strokeWidth={1.5} aria-hidden="true" />
+                  </IconButton>
+                </div>
+                {templates.length === 0 ? (
                   <EmptyState title="No recurring classes for this course" />
                 ) : (
                   <ul className={styles.templateList}>
-                    {courseTemplates.map((tmpl) => (
+                    {templates.map((tmpl) => (
                       <li key={tmpl.id} className={styles.templateRow}>
                         <span className={styles.templateType}>{tmpl.type}</span>
                         <span className={styles.templateDetail}>
@@ -188,6 +259,14 @@ export function CourseDetailScreen() {
                             {tmpl.location}
                           </span>
                         )}
+                        <IconButton
+                          aria-label={`Remove ${tmpl.type} class`}
+                          size="small"
+                          variant="ghost"
+                          onClick={() => deleteTemplate(tmpl.id)}
+                        >
+                          <Trash2 size={14} strokeWidth={1.5} aria-hidden="true" />
+                        </IconButton>
                       </li>
                     ))}
                   </ul>
@@ -203,12 +282,57 @@ export function CourseDetailScreen() {
             )}
 
             {section === "grades" && (
-              <GradesSection categories={courseCategories} entries={courseEntries} />
+              <GradesSection
+                courseId={course.id}
+                categories={categories}
+                entries={entries}
+                boundaries={boundaries}
+              />
             )}
-            {section === "practice" && <PracticeSection entries={coursePractice} />}
+            {section === "practice" && <PracticeSection courseId={course.id} entries={practice} />}
           </div>
         </div>
       </div>
+
+      <CourseFormSheet
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        course={course}
+        tags={tags}
+        onSubmit={async (values) => {
+          await updateCourse(course.id, values);
+        }}
+      />
+
+      <UnitFormSheet
+        open={addUnitOpen}
+        onClose={() => setAddUnitOpen(false)}
+        onSubmit={async (values) => {
+          await createUnit({ courseId: course.id, ...values });
+        }}
+      />
+
+      <ScheduleTemplateFormSheet
+        open={addClassOpen}
+        onClose={() => setAddClassOpen(false)}
+        onSubmit={async (values) => {
+          await createTemplate({ courseId: course.id, ...values });
+        }}
+      />
+
+      <ConfirmationDialog
+        open={deleteOpen}
+        onCancel={() => setDeleteOpen(false)}
+        onConfirm={async () => {
+          await deleteCourse(course.id);
+          setDeleteOpen(false);
+          navigate("/courses", { replace: true });
+        }}
+        title={`Delete "${course.name}"?`}
+        description="This permanently deletes this course's units, content, tasks, schedule, grades, and practice scores. This cannot be undone."
+        confirmLabel="Delete course"
+        destructive
+      />
     </div>
   );
 }

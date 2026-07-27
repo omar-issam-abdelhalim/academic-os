@@ -1,13 +1,8 @@
 import { useMemo, useState } from "react";
+import { useLiveQuery } from "dexie-react-hooks";
 import { ScreenHeader } from "@/app/ScreenHeader";
 import { Select, StatusBadge } from "@/components";
-import {
-  fixtureCourses,
-  fixtureTasks,
-  fixtureScheduleOccurrences,
-  fixtureGradeEntries,
-  fixturePracticeEntries,
-} from "@/fixtures";
+import { semesterDb } from "@/data/db";
 import { sumRecorded } from "@/domain/gradeSummary";
 import styles from "./PerformanceScreen.module.css";
 
@@ -37,45 +32,62 @@ function StatBar({
 }
 
 /**
- * Performance Hub (STAGE_1A_UX_ARCHITECTURE.md §N) — Stage 6 will replace
- * these fixture-derived numbers with real computed analytics from raw
- * Dexie data; this screen establishes the IA slot and layout, not the
- * final analytics engine. Correlational framing only, never causal
- * (PRODUCT_SPEC.md §13).
+ * Performance Hub (STAGE_1A_UX_ARCHITECTURE.md §N) — totals below are real,
+ * computed from the same repositories every other screen uses (Stage 3).
+ * The deeper analytics engine (weekly/semester trends, strongest units,
+ * correlation insights) remains explicitly deferred to a later stage; this
+ * screen shows honest current totals, not a final analytics product.
+ * Correlational framing only, never causal (PRODUCT_SPEC.md §13).
  */
 export function PerformanceScreen() {
   const [courseFilter, setCourseFilter] = useState<string>("all");
 
-  const stats = useMemo(() => {
-    const tasks = fixtureTasks.filter((t) => courseFilter === "all" || t.courseId === courseFilter);
-    const taskTotal = tasks.length;
-    const taskDone = tasks.filter((t) => t.completed).length;
+  const coursesQuery = useLiveQuery(() => semesterDb.courses.toArray(), []);
+  const tasksQuery = useLiveQuery(() => semesterDb.tasks.toArray(), []);
+  const occurrencesQuery = useLiveQuery(() => semesterDb.scheduleOccurrences.toArray(), []);
+  const gradeEntriesQuery = useLiveQuery(() => semesterDb.gradeEntries.toArray(), []);
+  const practiceEntriesQuery = useLiveQuery(() => semesterDb.practiceEntries.toArray(), []);
+  const courses = useMemo(() => coursesQuery ?? [], [coursesQuery]);
+  const gradeEntries = useMemo(() => gradeEntriesQuery ?? [], [gradeEntriesQuery]);
 
-    const occurrences = fixtureScheduleOccurrences.filter(
+  const stats = useMemo(() => {
+    const tasks = tasksQuery ?? [];
+    const occurrences = occurrencesQuery ?? [];
+    const entries = gradeEntriesQuery ?? [];
+    const practiceEntries = practiceEntriesQuery ?? [];
+
+    const filteredTasks = tasks.filter(
+      (t) => courseFilter === "all" || t.courseId === courseFilter,
+    );
+    const taskTotal = filteredTasks.length;
+    const taskDone = filteredTasks.filter((t) => t.completed).length;
+
+    const filteredOccurrences = occurrences.filter(
       (o) => courseFilter === "all" || o.courseId === courseFilter,
     );
-    const attended = occurrences.filter((o) => o.status === "attended").length;
-    const missed = occurrences.filter((o) => o.status === "missed").length;
+    const attended = filteredOccurrences.filter((o) => o.status === "attended").length;
+    const missed = filteredOccurrences.filter((o) => o.status === "missed").length;
 
-    const gradeEntries = fixtureGradeEntries.filter(
+    const filteredGrades = entries.filter(
       (e) => courseFilter === "all" || e.courseId === courseFilter,
     );
-    const gradeTotal = sumRecorded(gradeEntries);
+    const gradeTotal = sumRecorded(filteredGrades);
 
-    const practiceEntries = fixturePracticeEntries.filter(
+    const filteredPractice = practiceEntries.filter(
       (p) => courseFilter === "all" || p.courseId === courseFilter,
     );
-    const practiceTotal = sumRecorded(practiceEntries);
+    const practiceTotal = sumRecorded(filteredPractice);
 
     return { taskTotal, taskDone, attended, missed, gradeTotal, practiceTotal };
-  }, [courseFilter]);
+  }, [courseFilter, tasksQuery, occurrencesQuery, gradeEntriesQuery, practiceEntriesQuery]);
 
   return (
     <div>
       <ScreenHeader title="Performance" />
       <div className={styles.content}>
         <StatusBadge tone="info" className={styles.disclaimer}>
-          Reference data for Stage 2 — not yet calculated from your real semester.
+          Real totals from your semester data — weekly/semester trend analytics arrive in a later
+          stage.
         </StatusBadge>
 
         <Select
@@ -85,7 +97,7 @@ export function PerformanceScreen() {
           className={styles.select}
         >
           <option value="all">All courses</option>
-          {fixtureCourses.map((c) => (
+          {courses.map((c) => (
             <option key={c.id} value={c.id}>
               {c.name}
             </option>
@@ -125,24 +137,28 @@ export function PerformanceScreen() {
 
         <section className={styles.insightSection}>
           <h3 className={styles.sectionTitle}>Course comparison</h3>
-          <ul className={styles.courseList}>
-            {fixtureCourses.map((c) => {
-              const entries = fixtureGradeEntries.filter((e) => e.courseId === c.id);
-              const total = sumRecorded(entries);
-              return (
-                <li key={c.id} className={styles.courseRow}>
-                  <span>{c.name}</span>
-                  <span className="numeric">
-                    {total.max > 0 ? `${total.earned}/${total.max}` : "—"}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
+          {courses.length === 0 ? (
+            <p className={styles.footnote}>Add a course to see it compared here.</p>
+          ) : (
+            <ul className={styles.courseList}>
+              {courses.map((c) => {
+                const courseEntries = gradeEntries.filter((e) => e.courseId === c.id);
+                const total = sumRecorded(courseEntries);
+                return (
+                  <li key={c.id} className={styles.courseRow}>
+                    <span>{c.name}</span>
+                    <span className="numeric">
+                      {total.max > 0 ? `${total.earned}/${total.max}` : "—"}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
           <p className={styles.footnote}>
-            Example insight framing (Stage 6 will compute this for real): &ldquo;Units where all
-            study tasks were completed had a higher average practice score.&rdquo; Never phrased as
-            a guarantee that completing tasks causes higher grades.
+            Example insight framing (a later stage will compute this for real): &ldquo;Units where
+            all study tasks were completed had a higher average practice score.&rdquo; Never phrased
+            as a guarantee that completing tasks causes higher grades.
           </p>
         </section>
       </div>

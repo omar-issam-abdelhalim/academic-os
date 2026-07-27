@@ -8,6 +8,7 @@ import {
   BarChart2,
   Settings,
   Tag as TagIcon,
+  Plus,
 } from "lucide-react";
 import { Dialog, Input } from "@/components";
 import styles from "./CommandPalette.module.css";
@@ -20,6 +21,16 @@ const DESTINATIONS = [
   { label: "Performance", to: "/performance", Icon: BarChart2 },
   { label: "Tags", to: "/tags", Icon: TagIcon },
   { label: "Settings", to: "/settings", Icon: Settings },
+];
+
+/** Quick-add actions — real now that the underlying creation flows are
+ * real (Stage 3 replaces Stage 2's "navigation only" boundary). Each
+ * navigates to the owning screen with a `?new=1` marker the screen itself
+ * recognizes to auto-open its creation form, rather than duplicating form
+ * logic here. */
+const ACTIONS = [
+  { label: "Add course", to: "/courses?new=1", Icon: Plus },
+  { label: "Add task", to: "/tasks?new=1", Icon: Plus },
 ];
 
 export interface CommandPaletteProps {
@@ -44,6 +55,10 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
     () => DESTINATIONS.filter((d) => d.label.toLowerCase().includes(query.toLowerCase())),
     [query],
   );
+  const actionResults = useMemo(
+    () => ACTIONS.filter((a) => a.label.toLowerCase().includes(query.toLowerCase())),
+    [query],
+  );
 
   function go(to: string) {
     navigate(to);
@@ -55,12 +70,20 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
     <Dialog open={open} onClose={onClose} title="Quick navigate">
       <Input
         ref={inputRef}
-        placeholder="Go to…"
+        placeholder="Go to, or add…"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        aria-label="Search destinations"
+        aria-label="Search destinations and actions"
       />
       <ul className={styles.results}>
+        {actionResults.map(({ label, to, Icon }) => (
+          <li key={to}>
+            <button type="button" className={styles.result} onClick={() => go(to)}>
+              <Icon size={18} strokeWidth={1.5} aria-hidden="true" />
+              {label}
+            </button>
+          </li>
+        ))}
         {results.map(({ label, to, Icon }) => (
           <li key={to}>
             <button type="button" className={styles.result} onClick={() => go(to)}>
@@ -69,7 +92,9 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
             </button>
           </li>
         ))}
-        {results.length === 0 && <li className={styles.empty}>No matches</li>}
+        {results.length === 0 && actionResults.length === 0 && (
+          <li className={styles.empty}>No matches</li>
+        )}
       </ul>
     </Dialog>
   );

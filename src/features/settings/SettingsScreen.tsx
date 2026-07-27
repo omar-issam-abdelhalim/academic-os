@@ -5,6 +5,7 @@ import { ChevronRight, Download, RotateCcw } from "lucide-react";
 import { ScreenHeader } from "@/app/ScreenHeader";
 import { SegmentedControl, Toggle, Divider } from "@/components";
 import { useTheme } from "@/hooks/useTheme";
+import { getPreferences, updatePreferences } from "@/data/repositories/preferencesRepository";
 import { semesterDb } from "@/data/db";
 import styles from "./SettingsScreen.module.css";
 
@@ -17,8 +18,10 @@ const THEME_OPTIONS = [
 /**
  * Settings — reachable even before a semester exists
  * (STAGE_1A_UX_ARCHITECTURE.md §S), because AppPreferences lives in the
- * separate preferences database. Theme control here is real, persisted
- * state, not a fixture.
+ * separate preferences database. Theme and notification preferences are
+ * both real, persisted state (Stage 3 extends notifications from a
+ * Stage 2 stub to genuine `AppPreferences.notificationsEnabled`
+ * persistence).
  */
 export function SettingsScreen() {
   const navigate = useNavigate();
@@ -30,12 +33,21 @@ export function SettingsScreen() {
   const semester = useLiveQuery(() => semesterDb.semester.toCollection().first(), []);
 
   useEffect(() => {
+    getPreferences().then((prefs) => setNotificationsEnabled(prefs.notificationsEnabled));
+  }, []);
+
+  useEffect(() => {
     if (navigator.storage?.estimate) {
       navigator.storage.estimate().then((estimate) => {
         setStorageEstimate({ usage: estimate.usage ?? 0, quota: estimate.quota ?? 0 });
       });
     }
   }, []);
+
+  async function handleNotificationsChange(next: boolean) {
+    setNotificationsEnabled(next);
+    await updatePreferences({ notificationsEnabled: next });
+  }
 
   return (
     <div>
@@ -57,7 +69,7 @@ export function SettingsScreen() {
           <h3 className={styles.sectionTitle}>Notifications</h3>
           <Toggle
             checked={notificationsEnabled}
-            onChange={setNotificationsEnabled}
+            onChange={handleNotificationsChange}
             label="Class reminders"
           />
           <p className={styles.hint}>
@@ -112,7 +124,7 @@ export function SettingsScreen() {
 
         <section className={styles.section}>
           <h3 className={styles.sectionTitle}>About</h3>
-          <p className={styles.value}>Academic OS · v0.2.0</p>
+          <p className={styles.value}>Academic OS · v0.3.0</p>
           {storageEstimate && storageEstimate.quota > 0 && (
             <p className={styles.hint}>
               Using {(storageEstimate.usage / (1024 * 1024)).toFixed(1)} MB of{" "}

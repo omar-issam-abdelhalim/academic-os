@@ -1,12 +1,11 @@
 /**
- * Minimal display-aggregation helpers for the Grades reference UI. This is
- * intentionally *not* the full grade-calculation engine described in
- * PRODUCT_SPEC.md §11 (required score to pass, max possible final, etc.)
- * — that is explicit Stage 5 scope. This module only sums what's already
- * recorded, which the reference screens need to render honestly (never
- * treating an unrecorded entry/category as zero).
+ * Grade-aggregation domain logic for both Simple and Structured Mode
+ * (PRODUCT_SPEC.md §10-11). Deliberately conservative about what it
+ * fabricates: an unrecorded entry/category is never treated as a zero, and
+ * "current performance" is always computed only over what's actually been
+ * recorded, never over declared-but-empty category capacity.
  */
-import type { GradeCategory, GradeEntry } from "@/types/entities";
+import type { GradeBoundary, GradeCategory, GradeEntry } from "@/types/entities";
 
 export interface RecordedTotal {
   earned: number;
@@ -45,4 +44,56 @@ export function topLevelCategories(categories: GradeCategory[]): GradeCategory[]
 
 export function childCategories(categories: GradeCategory[], parentId: string): GradeCategory[] {
   return categories.filter((c) => c.parentCategoryId === parentId);
+}
+
+/** "Current performance" — a percentage computed only over what's actually
+ * recorded (`recorded.max`), never over a course's full declared point
+ * total. `undefined` (not `0`) when nothing has been recorded yet, so the
+ * UI can render "not yet available" instead of a misleading 0%. */
+export function currentPerformancePercent(recorded: RecordedTotal): number | undefined {
+  if (recorded.max <= 0) return undefined;
+  return (recorded.earned / recorded.max) * 100;
+}
+
+/** Points still available to be recorded: a course's full declared maximum
+ * (Structured Mode's category tree total) minus what's already been given
+ * a category. In Simple Mode (no declared course total), this is always 0
+ * — there's no "remaining" concept without a declared ceiling. */
+export function remainingAvailablePoints(courseMaxPoints: number, recorded: RecordedTotal): number {
+  return Math.max(courseMaxPoints - recorded.max, 0);
+}
+
+/** The best final score still achievable: everything earned so far, plus a
+ * perfect score on every remaining (not-yet-recorded) point. */
+export function maxPossibleFinalScore(recorded: RecordedTotal, remaining: number): number {
+  return recorded.earned + remaining;
+}
+
+/** Score still needed on the remaining points to reach a target overall
+ * percentage of `courseMaxPoints` — `undefined` if there's no remaining
+ * capacity left to earn it in (target is already unreachable or already
+ * decided). Never negative: if the target is already met, 0 remaining
+ * points are required. */
+export function requiredScoreForTarget(
+  courseMaxPoints: number,
+  recorded: RecordedTotal,
+  remaining: number,
+  targetPercent: number,
+): number | undefined {
+  if (remaining <= 0) return undefined;
+  const targetPoints = (targetPercent / 100) * courseMaxPoints;
+  const needed = targetPoints - recorded.earned;
+  return Math.min(Math.max(needed, 0), remaining);
+}
+
+/** Highest boundary (e.g. "A+") whose `minPercent` the given percent
+ * clears — grade boundaries are always user-configurable per course, never
+ * a hard-coded scale (PRODUCT_SPEC.md §11). */
+export function boundaryForPercent(
+  boundaries: GradeBoundary[],
+  percent: number,
+): GradeBoundary | undefined {
+  return [...boundaries]
+    .sort((a, b) => b.minPercent - a.minPercent)
+    .find((b) => percent >= b.minPercent);
 }

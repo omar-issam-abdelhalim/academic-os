@@ -1,6 +1,14 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  align-items: flex-start;
+}
+
 .list {
   display: flex;
   flex-direction: column;
+  width: 100%;
 }
 
 .actionStack {

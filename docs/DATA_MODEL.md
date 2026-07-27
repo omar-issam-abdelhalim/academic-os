@@ -66,7 +66,7 @@ academic-os-semester DB:
 | Field | Notes |
 |---|---|
 | theme | e.g. `system \| light \| dark` |
-| notificationPrefs | reminder lead time, enabled flags — see PRODUCT_SPEC §9 |
+| notificationsEnabled | bool — **implemented (Stage 3)** as `AppPreferences.notificationsEnabled`, real persisted state behind Settings' "Class reminders" toggle. Reminder lead-time granularity from the original `notificationPrefs` sketch is not yet implemented — that's still future scheduling-engine work (ARCHITECTURE.md §"Notifications — platform constraints"), not just a preferences-persistence gap. |
 | hasCompletedOnboarding | bool |
 | lastExportReminderAt | drives a future "you haven't exported in a while" nudge |
 
@@ -115,22 +115,22 @@ Courses reference Tags via `Course.tagIds[]`, which lives in the *semester* data
 ### ContentBlock (discriminated union on `type`)
 | Common fields | title (user-facing, independent of file name), unitId, order, createdAt, updatedAt |
 |---|---|
-| `type: "text"` | `content: string` — **approved direction:** Markdown-flavored source text supporting headings, bold/italic, lists, links, and inline/code blocks, not plain text only. The stored value is always the raw Markdown-style source; rendering always goes through a safe parse-and-sanitize step (never raw HTML passthrough) — see SECURITY.md §1. No specific parser/editor library is chosen in Stage 0; that is a Stage 3 implementation decision constrained by this safety requirement. |
+| `type: "text"` | `content: string` — **implemented (Stage 3), approved direction:** Markdown-flavored source text supporting headings, bold/italic, lists, links, and inline/code blocks, not plain text only. The stored value is always the raw Markdown-style source; rendering always goes through a safe parse-and-sanitize step (never raw HTML passthrough) — see SECURITY.md §1. The chosen implementation (Stage 2, reused unchanged by Stage 3's editor) is a small hand-written parser (`src/lib/safeMarkdown.tsx`) that builds React elements directly from source text — never an HTML string, never `dangerouslySetInnerHTML` — rather than pulling in a third-party Markdown/editor dependency. |
 | `type: "file"` | `blobId`, `originalFileName`, `mimeType`, `sizeBytes` |
 | `type: "image"` | `blobId`, `originalFileName`, `mimeType`, `sizeBytes` |
 | `type: "video"` | `blobId`, `originalFileName`, `mimeType`, `sizeBytes` |
 
-New block types (e.g. `link`, `checklist`, `audio`) are added as new union members — additive, no redesign. Full CRUD/reorder behavior is designed here but implemented in Stage 3.
+New block types (e.g. `link`, `checklist`, `audio`) are added as new union members — additive, no redesign. Full CRUD/reorder behavior is **implemented (Stage 3)** — `src/data/repositories/contentBlockRepository.ts`.
 
-### Blob (dedicated table, deliberately separate from ContentBlock metadata)
+### Blob (dedicated table, deliberately separate from ContentBlock metadata) — **implemented (Stage 3)**
 | Field | Notes |
 |---|---|
 | id | referenced by ContentBlock.blobId |
-| mimeType, sizeBytes | validated at intake — see SECURITY.md |
+| mimeType, sizeBytes | validated at intake — see SECURITY.md and `src/domain/contentValidation.ts` (per-block-type size caps and declared-MIME-type allow-lists) |
 | data | `Blob` |
 | createdAt | |
 
-Kept in its own table so metadata-only queries (rendering a unit's block list) never pull binary payloads into memory.
+Kept in its own table so metadata-only queries (rendering a unit's block list) never pull binary payloads into memory. Added to `academic-os-semester` as Dexie schema **version 2** (`src/data/db.ts`) — a purely additive migration (a new store, no existing store's index signature changed), so no `.upgrade()` transform was needed.
 
 ### Task
 | Field | Notes |
@@ -256,12 +256,13 @@ A versioned envelope, e.g.:
 - `taskCompletionEvents` is the full append-only completion-history log for every task in the semester — included precisely because it is raw analytics source data, per the approved decision that Semester Export must preserve `TaskCompletionEvent` history, not just current `Task.completed` state.
 - The media export (§17 of the product spec) is a separate, optional zip keyed by personal-image blobs specifically, organized by Course/Unit folder names, and is versioned independently since it can evolve on its own schedule.
 
-## Referential Integrity & Deletion Rules (to formalize in Stage 2/3)
+## Referential Integrity & Deletion Rules — **implemented (Stage 3)**, `src/data/repositories/{course,unit,task,grade}Repository.ts`
 
 - Deleting a Course cascades to its Units, ContentBlocks (and their Blobs), Tasks (and their TaskCompletionEvents), ScheduleTemplates (and their Occurrences), GradeCategories/Entries/Boundaries, and PracticeEntries — all scoped to that course. The Course's `tagIds[]` association simply disappears with it; the referenced global `Tag` rows (a different database) are never touched.
 - Deleting a Unit cascades to its ContentBlocks/Blobs, unit-scoped Tasks (and their TaskCompletionEvents), and PracticeEntries; course-level Tasks/PracticeEntries (not tied to that unit) are unaffected.
 - Deleting a Task cascades to delete its `TaskCompletionEvent` rows — the event log only has meaning for a task that still exists; see §TaskCompletionEvent above.
 - Deleting a ScheduleTemplate does **not** delete existing ScheduleOccurrences (they retain their denormalized snapshot and remain valid historical attendance records); it only stops generating future occurrences.
 - Deleting a global `Tag` (from Settings, an application-level operation, not a semester operation) does **not** cascade-delete anything in the semester database; any `Course.tagIds` entries that now point to a nonexistent Tag are treated as stale and filtered out at read time (see "Cross-database references are not enforceable at the database layer" above) — no cross-database cascade is performed.
+- Deleting a GradeCategory un-assigns (never deletes) any GradeEntry rows that referenced it — they become unassigned entries, the same "uncategorized, never zero" honesty rule §GradeEntry already establishes, extended to the deletion case. Deleting a top-level category also un-nests (never deletes) its child categories.
 - "Start New Semester" deletes/recreates the entire `academic-os-semester` database (Semester, Course, Unit, ContentBlock, Blob, Task, TaskCompletionEvent, ScheduleTemplate, ScheduleOccurrence, GradeCategory, GradeEntry, GradeBoundary, PracticeEntry, WeeklyCheckIn — everything above) but never touches `academic-os-preferences` (AppPreferences and the global Tag table survive unchanged).
 - IDs are stable, generated client-side (e.g. UUID/ULID) at creation time and never reused — this matters for export/import round-tripping and for occurrence snapshots referencing a template that may later be deleted.

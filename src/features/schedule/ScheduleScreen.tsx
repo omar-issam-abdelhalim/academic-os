@@ -1,9 +1,12 @@
 import { useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useLiveQuery } from "dexie-react-hooks";
 import { ScreenHeader } from "@/app/ScreenHeader";
 import { useIsDesktop } from "@/hooks/useMediaQuery";
-import { useFixtureSchedule } from "@/features/shared/useFixtureSchedule";
+import { useOccurrencesForDates, markAttendance } from "@/features/shared/useSchedule";
+import { listCourses } from "@/data/repositories/courseRepository";
 import { academicWeekDays, formatWeekRange, getAcademicWeek } from "@/domain/academicWeek";
+import { toIsoDate } from "@/domain/scheduleGeneration";
 import { WeekOverview } from "./WeekOverview";
 import { DayDetail } from "./DayDetail";
 import { WeekGrid } from "./WeekGrid";
@@ -12,18 +15,22 @@ import styles from "./ScheduleScreen.module.css";
 /**
  * Schedule: mobile Compact Week Overview → Day Detail hybrid, desktop full
  * week grid — both views of one screen (STAGE_1A_UX_ARCHITECTURE.md §K).
- * The selected day is a query param so Day Detail is a real, shareable
- * deep link even though it isn't a separate route.
+ * Occurrences are real, lazily-generated `ScheduleOccurrence` rows (Stage
+ * 3) — see `useOccurrencesForDates`, not fixtures.
  */
 export function ScheduleScreen() {
   const isDesktop = useIsDesktop();
-  const { occurrences, markAttendance } = useFixtureSchedule();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const now = new Date();
-  const todayIso = now.toISOString().slice(0, 10);
+  const todayIso = toIsoDate(now);
   const days = academicWeekDays(now);
   const weekLabel = formatWeekRange(getAcademicWeek(now));
+
+  const occurrences = useOccurrencesForDates(days);
+  const coursesQuery = useLiveQuery(() => listCourses(), []);
+  const courses = useMemo(() => coursesQuery ?? [], [coursesQuery]);
+  const courseById = useMemo(() => new Map(courses.map((c) => [c.id, c])), [courses]);
 
   const occurrencesByDay = useMemo(() => {
     const map = new Map<string, typeof occurrences>();
@@ -47,7 +54,7 @@ export function ScheduleScreen() {
     if (!selectedDay) return;
     const d = new Date(selectedDay);
     d.setDate(d.getDate() + delta);
-    setSearchParams({ day: d.toISOString().slice(0, 10) });
+    setSearchParams({ day: toIsoDate(d) });
   }
 
   if (isDesktop) {
@@ -60,6 +67,7 @@ export function ScheduleScreen() {
             days={days}
             occurrencesByDay={occurrencesByDay}
             todayIso={todayIso}
+            courseById={courseById}
             onMarkAttendance={markAttendance}
           />
         </div>
@@ -75,6 +83,7 @@ export function ScheduleScreen() {
           <DayDetail
             date={new Date(selectedDay)}
             occurrences={occurrencesByDay.get(selectedDay) ?? []}
+            courseById={courseById}
             onBack={backToWeek}
             onPrevDay={() => shiftDay(-1)}
             onNextDay={() => shiftDay(1)}
@@ -86,6 +95,7 @@ export function ScheduleScreen() {
             <WeekOverview
               days={days}
               occurrencesByDay={occurrencesByDay}
+              courseById={courseById}
               onSelectDay={selectDay}
               todayIso={todayIso}
             />

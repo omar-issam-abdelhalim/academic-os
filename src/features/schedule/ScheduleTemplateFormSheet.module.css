@@ -1,0 +1,44 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.label {
+  font: var(--text-label-default);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-2);
+}
+
+.chipRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.chip {
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-pill);
+  font: var(--text-body-small);
+}
+
+.chip[aria-pressed="true"] {
+  border-color: var(--color-action-primary);
+  color: var(--color-action-primary);
+}
+
+.timeRow {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.timeRow > * {
+  flex: 1;
+}
+
+.formError {
+  font: var(--text-body-small);
+  color: var(--color-status-danger);
+}

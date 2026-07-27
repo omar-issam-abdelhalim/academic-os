@@ -2,7 +2,7 @@
 
 A premium, local-first academic and learning management Progressive Web App — a personal academic operating system for organizing courses, units, materials, tasks, weekly schedule, attendance, grades, practice performance, analytics, and semester exports.
 
-**Status:** Stage 0 (specification & architecture) and Stage 2 (engineering foundation, live UI, PWA, CI) are complete. Stage 1A (UX architecture) is approved; Stage 1B (visual design system) established approved token foundations before moving to direct implementation — see [docs/ROADMAP.md](./docs/ROADMAP.md). Stage 3 (real Course/Unit/Task/Schedule/Grade persistence, replacing the current reference fixtures) has not started.
+**Status:** Stage 0 (specification & architecture), Stage 2 (engineering foundation, live UI, PWA, CI), and Stage 3 (real Course/Unit/Content/Schedule/Task/Attendance/Grade/Practice persistence and Semester Export, replacing every Stage 2 reference fixture) are complete. Stage 1A (UX architecture) is approved; Stage 1B (visual design system) established approved token foundations before moving to direct implementation — see [docs/ROADMAP.md](./docs/ROADMAP.md) and [docs/STAGE_3_REPORT.md](./docs/STAGE_3_REPORT.md). Analytics (original Stage 6) and Import/Media Export/security hardening/`1.0.0` (the remainder of the original Stage 7) have not started.
 
 ## Quick Start
 
@@ -30,6 +30,7 @@ This repository is documentation-first — read the relevant docs before changin
 7. [docs/STAGE_1A_UX_ARCHITECTURE.md](./docs/STAGE_1A_UX_ARCHITECTURE.md) — approved navigation/IA/user flows
 8. [docs/STAGE_1B_DESIGN_SYSTEM.md](./docs/STAGE_1B_DESIGN_SYSTEM.md) — approved visual foundations (tokens)
 9. [docs/STAGE_2_REPORT.md](./docs/STAGE_2_REPORT.md) — what Stage 2 delivered and what's still a fixture vs. real
+10. [docs/STAGE_3_REPORT.md](./docs/STAGE_3_REPORT.md) — what Stage 3 delivered (real persistence replacing every remaining fixture) and what's still deferred
 
 ## Principles
 

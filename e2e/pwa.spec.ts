@@ -99,7 +99,11 @@ test.describe("PWA — manifest, icons, service worker, offline shell", () => {
       // banner's correctness under a real network disconnect has not been
       // independently verified and is called out as such in the report.
       await expect(page.getByRole("heading", { name: "Home" })).toBeVisible({ timeout: 10_000 });
-      await expect(page.getByRole("heading", { name: /Overdue/ })).toBeVisible();
+      // A fresh semester with no tasks/courses yet still renders real,
+      // Dexie-backed content offline — the "Today" section heading and its
+      // honest empty-state copy, not a network-dependent placeholder.
+      await expect(page.getByRole("heading", { name: "Today" })).toBeVisible();
+      await expect(page.getByText(/nothing due today/i)).toBeVisible();
     } finally {
       await context.setOffline(false);
     }

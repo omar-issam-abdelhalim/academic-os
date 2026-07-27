@@ -3,8 +3,8 @@ import { MapPin } from "lucide-react";
 import { DAY_LABELS } from "@/domain/academicWeek";
 import { occurrenceDateTimes } from "@/domain/scheduleOccurrence";
 import { getAttendancePresentationState } from "@/domain/attendancePresentation";
-import { courseById } from "@/fixtures";
-import type { ScheduleOccurrence, ScheduleOccurrenceStatus } from "@/types/entities";
+import { toIsoDate } from "@/domain/scheduleGeneration";
+import type { Course, ScheduleOccurrence, ScheduleOccurrenceStatus } from "@/types/entities";
 import { AttendanceControl } from "@/features/shared/AttendanceControl";
 import { Dialog } from "@/components";
 import { cn } from "@/lib/classNames";
@@ -14,6 +14,7 @@ export interface WeekGridProps {
   days: Date[];
   occurrencesByDay: Map<string, ScheduleOccurrence[]>;
   todayIso: string;
+  courseById: Map<string, Course>;
   onMarkAttendance: (id: string, status: ScheduleOccurrenceStatus) => void;
 }
 
@@ -41,7 +42,13 @@ const STATE_TONE_CLASS: Record<string, string> = {
  * AttendanceControl — the same "compact overview, tap for detail" split
  * Day Detail already uses on mobile.
  */
-export function WeekGrid({ days, occurrencesByDay, todayIso, onMarkAttendance }: WeekGridProps) {
+export function WeekGrid({
+  days,
+  occurrencesByDay,
+  todayIso,
+  courseById,
+  onMarkAttendance,
+}: WeekGridProps) {
   const [selected, setSelected] = useState<ScheduleOccurrence | null>(null);
   const all = Array.from(occurrencesByDay.values()).flat();
   const startHour = Math.min(
@@ -65,7 +72,7 @@ export function WeekGrid({ days, occurrencesByDay, todayIso, onMarkAttendance }:
     };
   }
 
-  const selectedCourse = selected ? courseById(selected.courseId) : undefined;
+  const selectedCourse = selected ? courseById.get(selected.courseId) : undefined;
 
   return (
     <div className={styles.grid}>
@@ -78,7 +85,7 @@ export function WeekGrid({ days, occurrencesByDay, todayIso, onMarkAttendance }:
         ))}
       </div>
       {days.map((day, i) => {
-        const iso = day.toISOString().slice(0, 10);
+        const iso = toIsoDate(day);
         const isToday = iso === todayIso;
         const dayOccurrences = occurrencesByDay.get(iso) ?? [];
         return (
@@ -108,8 +115,8 @@ export function WeekGrid({ days, occurrencesByDay, todayIso, onMarkAttendance }:
                     onClick={() => setSelected(occurrence)}
                   >
                     <p className={styles.eventTitle}>
-                      {courseById(occurrence.courseId)?.code ??
-                        courseById(occurrence.courseId)?.name}
+                      {courseById.get(occurrence.courseId)?.code ??
+                        courseById.get(occurrence.courseId)?.name}
                     </p>
                     <p className={styles.eventType}>{occurrence.type}</p>
                   </button>

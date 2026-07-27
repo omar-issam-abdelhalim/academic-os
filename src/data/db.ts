@@ -25,6 +25,7 @@ import type {
   Course,
   Unit,
   ContentBlock,
+  StoredBlob,
   Task,
   TaskCompletionEvent,
   ScheduleTemplate,
@@ -54,6 +55,7 @@ export class SemesterDatabase extends Dexie {
   courses!: EntityTable<Course, "id">;
   units!: EntityTable<Unit, "id">;
   contentBlocks!: EntityTable<ContentBlock, "id">;
+  blobs!: EntityTable<StoredBlob, "id">;
   tasks!: EntityTable<Task, "id">;
   taskCompletionEvents!: EntityTable<TaskCompletionEvent, "id">;
   scheduleTemplates!: EntityTable<ScheduleTemplate, "id">;
@@ -80,6 +82,12 @@ export class SemesterDatabase extends Dexie {
       gradeBoundaries: "id, courseId",
       practiceEntries: "id, unitId, courseId",
       weeklyCheckIns: "id, weekStartDate",
+    });
+    // Stage 3: adds the Blob table (DATA_MODEL.md §Blob) for file/image/video
+    // content-block uploads. Purely additive — no existing store's index
+    // signature changes, so no .upgrade() transform is needed.
+    this.version(2).stores({
+      blobs: "id",
     });
   }
 }

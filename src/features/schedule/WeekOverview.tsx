@@ -1,12 +1,13 @@
 import { cn } from "@/lib/classNames";
 import { DAY_LABELS } from "@/domain/academicWeek";
-import { courseById } from "@/fixtures";
-import type { ScheduleOccurrence } from "@/types/entities";
+import { toIsoDate } from "@/domain/scheduleGeneration";
+import type { Course, ScheduleOccurrence } from "@/types/entities";
 import styles from "./WeekOverview.module.css";
 
 export interface WeekOverviewProps {
   days: Date[];
   occurrencesByDay: Map<string, ScheduleOccurrence[]>;
+  courseById: Map<string, Course>;
   onSelectDay: (isoDate: string) => void;
   todayIso: string;
 }
@@ -16,11 +17,17 @@ export interface WeekOverviewProps {
  * glance, not a shrunk desktop grid (STAGE_1A_UX_ARCHITECTURE.md §K,
  * Revision A). Today is visually emphasized.
  */
-export function WeekOverview({ days, occurrencesByDay, onSelectDay, todayIso }: WeekOverviewProps) {
+export function WeekOverview({
+  days,
+  occurrencesByDay,
+  courseById,
+  onSelectDay,
+  todayIso,
+}: WeekOverviewProps) {
   return (
     <ul className={styles.list}>
       {days.map((day, i) => {
-        const iso = day.toISOString().slice(0, 10);
+        const iso = toIsoDate(day);
         const isToday = iso === todayIso;
         const dayOccurrences = occurrencesByDay.get(iso) ?? [];
         return (
@@ -40,7 +47,8 @@ export function WeekOverview({ days, occurrencesByDay, onSelectDay, todayIso }: 
                 ) : (
                   dayOccurrences.map((o) => (
                     <span key={o.id} className={styles.chip}>
-                      {courseById(o.courseId)?.code ?? courseById(o.courseId)?.name} · {o.type}
+                      {courseById.get(o.courseId)?.code ?? courseById.get(o.courseId)?.name} ·{" "}
+                      {o.type}
                     </span>
                   ))
                 )}

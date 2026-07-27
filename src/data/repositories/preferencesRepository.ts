@@ -6,12 +6,17 @@ const DEFAULTS: AppPreferences = {
   id: "singleton",
   theme: "system",
   hasCompletedOnboarding: false,
+  notificationsEnabled: true,
 };
 
+/** Merges stored preferences over the current defaults rather than
+ * returning a stored record verbatim — a record written before a field was
+ * added (e.g. `notificationsEnabled`, introduced in Stage 3) must not read
+ * back as `undefined`. */
 export async function getPreferences(): Promise<AppPreferences> {
   return withStorageErrorHandling(async () => {
     const existing = await preferencesDb.appPreferences.get("singleton");
-    return existing ?? DEFAULTS;
+    return existing ? { ...DEFAULTS, ...existing } : DEFAULTS;
   });
 }
 

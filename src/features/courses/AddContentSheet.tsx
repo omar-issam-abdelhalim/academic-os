@@ -19,9 +19,9 @@ const TYPES = [
 /**
  * Type-first picker (STAGE_1A_UX_ARCHITECTURE.md §I): "a single inline
  * 'compose anything' box would have to guess intent." Mobile uses a
- * bottom sheet, desktop the same flow as a centered dialog. Choosing a
- * type is Stage 2 reference behavior — the composer/upload pipeline
- * itself is Stage 3 (once the Blob store is wired to real forms).
+ * bottom sheet, desktop the same flow as a centered dialog. The chosen
+ * type is handed to `ContentBlockComposer` (Stage 3), which owns the real
+ * composer/upload pipeline for that type.
  */
 export function AddContentSheet({ open, onClose, onChoose }: AddContentSheetProps) {
   const isDesktop = useIsDesktop();

@@ -1,50 +1,69 @@
 import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
+import { useLiveQuery } from "dexie-react-hooks";
+import { Plus } from "lucide-react";
 import { ScreenHeader } from "@/app/ScreenHeader";
-import { EmptyState } from "@/components";
+import { EmptyState, IconButton } from "@/components";
 import { TaskRow, type TaskRowData } from "@/features/shared/TaskRow";
-import { useFixtureTasks } from "@/features/shared/useFixtureTasks";
+import { useTasks } from "@/features/shared/useTasks";
+import { TaskFormSheet } from "./TaskFormSheet";
+import { listCourses } from "@/data/repositories/courseRepository";
+import { createTask, updateTask, deleteTask } from "@/data/repositories/taskRepository";
 import { bucketForDate, getAcademicWeek, formatWeekRange } from "@/domain/academicWeek";
-import { courseById } from "@/fixtures";
 import type { Task } from "@/types/entities";
 import styles from "./TasksScreen.module.css";
 
-function toRowData(task: Task, now: Date): TaskRowData {
-  const course = task.courseId ? courseById(task.courseId) : undefined;
-  const overdue = task.dueDate ? bucketForDate(new Date(task.dueDate), now) === "overdue" : false;
-  const dueLabel = task.dueDate
-    ? new Date(task.dueDate).toLocaleDateString(undefined, {
-        weekday: "short",
-        month: "short",
-        day: "numeric",
-      })
-    : undefined;
-  return {
-    id: task.id,
-    title: task.title,
-    completed: task.completed,
-    courseLabel: course?.name,
-    dueLabel,
-    overdue,
-  };
-}
-
 /**
  * Global Tasks (STAGE_1A_UX_ARCHITECTURE.md §J): Overdue / Today /
- * Upcoming (grouped by academic week, current week expanded, later weeks
- * collapsed) / No due date. Reuses the identical TaskRow used on Home and
- * will be reused by Course/Unit-scoped views in Stage 3.
+ * Upcoming (grouped by academic week, current week expanded)/No due date.
+ * Backed by real `taskRepository` data via the shared `useTasks` hook
+ * (Stage 3) — the identical hook Home and Course/Unit-scoped views use, so
+ * completion state is always consistent everywhere.
  */
 export function TasksScreen() {
-  const navigate = useNavigate();
-  const { tasks, toggle, undo, undoState } = useFixtureTasks();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { tasks, toggle, undo, undoState } = useTasks();
+  const coursesQuery = useLiveQuery(() => listCourses(), []);
+  const courses = useMemo(() => coursesQuery ?? [], [coursesQuery]);
   const [expandedWeeks, setExpandedWeeks] = useState<Set<string>>(new Set());
   const [showCompleted, setShowCompleted] = useState(false);
-  // Stable for the component's lifetime — a reference screen doesn't need
-  // per-second freshness, and this keeps the useMemo below correctly
-  // memoized instead of recomputing (and re-triggering the lint warning)
-  // on every render.
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | undefined>();
   const now = useMemo(() => new Date(), []);
+
+  const courseById = useMemo(() => new Map(courses.map((c) => [c.id, c])), [courses]);
+
+  const newTaskCourseId = searchParams.get("newTaskCourseId") ?? undefined;
+  const newTaskUnitId = searchParams.get("newTaskUnitId") ?? undefined;
+  // Arriving here from Course/Unit Detail's "Add task" or the command
+  // palette's "Add task" quick-add — derived directly during render (no
+  // effect needed) so the form opens on the very first render.
+  const openFromQuery = Boolean(newTaskCourseId) || searchParams.get("new") === "1";
+
+  function closeForm() {
+    setFormOpen(false);
+    setEditingTask(undefined);
+    if (openFromQuery) setSearchParams({});
+  }
+
+  function toRowData(task: Task): TaskRowData {
+    const overdue = task.dueDate ? bucketForDate(new Date(task.dueDate), now) === "overdue" : false;
+    const dueLabel = task.dueDate
+      ? new Date(task.dueDate).toLocaleDateString(undefined, {
+          weekday: "short",
+          month: "short",
+          day: "numeric",
+        })
+      : undefined;
+    return {
+      id: task.id,
+      title: task.title,
+      completed: task.completed,
+      courseLabel: task.courseId ? courseById.get(task.courseId)?.name : undefined,
+      dueLabel,
+      overdue,
+    };
+  }
 
   const groups = useMemo(() => {
     const incomplete = tasks.filter((t) => !t.completed);
@@ -82,6 +101,14 @@ export function TasksScreen() {
     });
   }
 
+  function openTask(id: string) {
+    const task = tasks.find((t) => t.id === id);
+    if (task) {
+      setEditingTask(task);
+      setFormOpen(true);
+    }
+  }
+
   const isEmpty =
     groups.overdue.length === 0 &&
     groups.today.length === 0 &&
@@ -90,7 +117,20 @@ export function TasksScreen() {
 
   return (
     <div>
-      <ScreenHeader title="Tasks" />
+      <ScreenHeader
+        title="Tasks"
+        action={
+          <IconButton
+            aria-label="Add task"
+            onClick={() => {
+              setEditingTask(undefined);
+              setFormOpen(true);
+            }}
+          >
+            <Plus size={20} strokeWidth={1.5} aria-hidden="true" />
+          </IconButton>
+        }
+      />
       <div className={styles.content}>
         {isEmpty && groups.completed.length === 0 && (
           <EmptyState
@@ -104,12 +144,7 @@ export function TasksScreen() {
             <h2 className={styles.sectionTitle}>Overdue</h2>
             <ul>
               {groups.overdue.map((t) => (
-                <TaskRow
-                  key={t.id}
-                  task={toRowData(t, now)}
-                  onToggle={toggle}
-                  onOpen={() => navigate(`/tasks?task=${t.id}`)}
-                />
+                <TaskRow key={t.id} task={toRowData(t)} onToggle={toggle} onOpen={openTask} />
               ))}
             </ul>
           </section>
@@ -122,12 +157,7 @@ export function TasksScreen() {
           ) : (
             <ul>
               {groups.today.map((t) => (
-                <TaskRow
-                  key={t.id}
-                  task={toRowData(t, now)}
-                  onToggle={toggle}
-                  onOpen={() => navigate(`/tasks?task=${t.id}`)}
-                />
+                <TaskRow key={t.id} task={toRowData(t)} onToggle={toggle} onOpen={openTask} />
               ))}
             </ul>
           )}
@@ -153,9 +183,9 @@ export function TasksScreen() {
                       {group.tasks.map((t) => (
                         <TaskRow
                           key={t.id}
-                          task={toRowData(t, now)}
+                          task={toRowData(t)}
                           onToggle={toggle}
-                          onOpen={() => navigate(`/tasks?task=${t.id}`)}
+                          onOpen={openTask}
                         />
                       ))}
                     </ul>
@@ -171,12 +201,7 @@ export function TasksScreen() {
             <h2 className={styles.sectionTitle}>No due date</h2>
             <ul>
               {groups.noDueDate.map((t) => (
-                <TaskRow
-                  key={t.id}
-                  task={toRowData(t, now)}
-                  onToggle={toggle}
-                  onOpen={() => navigate(`/tasks?task=${t.id}`)}
-                />
+                <TaskRow key={t.id} task={toRowData(t)} onToggle={toggle} onOpen={openTask} />
               ))}
             </ul>
           </section>
@@ -194,12 +219,7 @@ export function TasksScreen() {
             {showCompleted && (
               <ul>
                 {groups.completed.map((t) => (
-                  <TaskRow
-                    key={t.id}
-                    task={toRowData(t, now)}
-                    onToggle={toggle}
-                    onOpen={() => navigate(`/tasks?task=${t.id}`)}
-                  />
+                  <TaskRow key={t.id} task={toRowData(t)} onToggle={toggle} onOpen={openTask} />
                 ))}
               </ul>
             )}
@@ -215,6 +235,29 @@ export function TasksScreen() {
           </button>
         </div>
       )}
+
+      <TaskFormSheet
+        open={formOpen || openFromQuery}
+        onClose={closeForm}
+        task={editingTask}
+        defaultCourseId={newTaskCourseId}
+        defaultUnitId={newTaskUnitId}
+        onSubmit={async (values) => {
+          if (editingTask) {
+            await updateTask(editingTask.id, values);
+          } else {
+            await createTask(values);
+          }
+        }}
+        onDelete={
+          editingTask
+            ? async () => {
+                await deleteTask(editingTask.id);
+                closeForm();
+              }
+            : undefined
+        }
+      />
     </div>
   );
 }

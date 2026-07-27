@@ -2,13 +2,13 @@ import { ChevronLeft, ChevronRight, MapPin } from "lucide-react";
 import { IconButton, EmptyState } from "@/components";
 import { AttendanceControl } from "@/features/shared/AttendanceControl";
 import { occurrenceDateTimes } from "@/domain/scheduleOccurrence";
-import { courseById } from "@/fixtures";
-import type { ScheduleOccurrence, ScheduleOccurrenceStatus } from "@/types/entities";
+import type { Course, ScheduleOccurrence, ScheduleOccurrenceStatus } from "@/types/entities";
 import styles from "./DayDetail.module.css";
 
 export interface DayDetailProps {
   date: Date;
   occurrences: ScheduleOccurrence[];
+  courseById: Map<string, Course>;
   onBack: () => void;
   onPrevDay: () => void;
   onNextDay: () => void;
@@ -21,6 +21,7 @@ export interface DayDetailProps {
 export function DayDetail({
   date,
   occurrences,
+  courseById,
   onBack,
   onPrevDay,
   onNextDay,
@@ -58,7 +59,7 @@ export function DayDetail({
       ) : (
         <ul className={styles.list}>
           {sorted.map((occurrence) => {
-            const course = courseById(occurrence.courseId);
+            const course = courseById.get(occurrence.courseId);
             return (
               <li key={occurrence.id} className={styles.item}>
                 <div className={styles.time}>

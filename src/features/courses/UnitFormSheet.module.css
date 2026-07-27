@@ -1,0 +1,30 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.typeLabel {
+  font: var(--text-label-default);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-2);
+}
+
+.typeGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.typeChip {
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-pill);
+  font: var(--text-body-small);
+}
+
+.typeChip[aria-pressed="true"] {
+  border-color: var(--color-action-primary);
+  color: var(--color-action-primary);
+}

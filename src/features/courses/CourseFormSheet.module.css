@@ -1,0 +1,23 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.tagsLabel {
+  font: var(--text-label-default);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-2);
+}
+
+.tagGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.tagButton[aria-pressed="true"] {
+  outline: 2px solid var(--color-action-primary);
+  outline-offset: 1px;
+  border-radius: var(--radius-pill);
+}

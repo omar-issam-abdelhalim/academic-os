@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLiveQuery } from "dexie-react-hooks";
 import { MapPin, X } from "lucide-react";
@@ -8,26 +8,31 @@ import { ScreenHeader } from "@/app/ScreenHeader";
 import { Button, EmptyState } from "@/components";
 import { AttendanceControl } from "@/features/shared/AttendanceControl";
 import { TaskRow } from "@/features/shared/TaskRow";
-import { useFixtureTasks } from "@/features/shared/useFixtureTasks";
-import { useFixtureSchedule } from "@/features/shared/useFixtureSchedule";
+import { useTasks } from "@/features/shared/useTasks";
+import { useOccurrencesForDates, markAttendance } from "@/features/shared/useSchedule";
+import { listCourses } from "@/data/repositories/courseRepository";
 import { findCurrentOrNextToday, occurrenceDateTimes } from "@/domain/scheduleOccurrence";
-import { bucketForDate } from "@/domain/academicWeek";
-import { courseById } from "@/fixtures";
+import { bucketForDate, academicWeekDays } from "@/domain/academicWeek";
 import styles from "./HomeScreen.module.css";
 
 /**
  * Home — answers "what do I need to do, and where am I today?" in under
  * five seconds (STAGE_1A_UX_ARCHITECTURE.md §G). Deliberately excludes
  * charts/analytics/full course grid — those live in Performance/Courses.
+ * Fully backed by real repositories (Stage 3) — no fixtures.
  */
 export function HomeScreen() {
   const navigate = useNavigate();
   const semester = useLiveQuery(() => semesterDb.semester.toCollection().first(), []);
-  const { tasks, toggle } = useFixtureTasks();
-  const { occurrences, markAttendance } = useFixtureSchedule();
+  const { tasks, toggle } = useTasks();
+  const coursesQuery = useLiveQuery(() => listCourses(), []);
+  const courses = useMemo(() => coursesQuery ?? [], [coursesQuery]);
+  const courseById = useMemo(() => new Map(courses.map((c) => [c.id, c])), [courses]);
   const [checkInDismissed, setCheckInDismissed] = useState(false);
 
-  const now = new Date();
+  const now = useMemo(() => new Date(), []);
+  const weekDays = useMemo(() => academicWeekDays(now), [now]);
+  const occurrences = useOccurrencesForDates(weekDays);
   const currentOrNext = findCurrentOrNextToday(occurrences, now);
 
   const overdue = tasks.filter(
@@ -38,7 +43,7 @@ export function HomeScreen() {
   );
 
   function taskRowData(task: (typeof tasks)[number]) {
-    const course = task.courseId ? courseById(task.courseId) : undefined;
+    const course = task.courseId ? courseById.get(task.courseId) : undefined;
     return {
       id: task.id,
       title: task.title,
@@ -53,6 +58,8 @@ export function HomeScreen() {
     };
   }
 
+  const hasNoCourses = courses.length === 0;
+
   return (
     <div>
       <ScreenHeader title="Home" />
@@ -63,46 +70,48 @@ export function HomeScreen() {
           </p>
         )}
 
-        <section aria-label="Today's class" className={styles.classCard}>
-          {currentOrNext.kind === "none" ? (
-            <p className={styles.noClasses}>No more classes today.</p>
-          ) : (
-            (() => {
-              const occurrence = currentOrNext.occurrence;
-              const course = courseById(occurrence.courseId);
-              const { start, end } = occurrenceDateTimes(occurrence);
-              const time = `${start.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}–${end.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}`;
-              return (
-                <>
-                  <p className={styles.classEyebrow}>
-                    {currentOrNext.kind === "in-progress" ? "In progress" : "Next class"}
-                  </p>
-                  <h2 className={styles.className}>
-                    {course?.name} — {occurrence.type}
-                  </h2>
-                  <p className={styles.classTime}>
-                    <span className={cn("numeric", styles.timeValue)}>{time}</span>
-                    {occurrence.location && (
-                      <span className={styles.location}>
-                        <MapPin size={14} strokeWidth={1.5} aria-hidden="true" />{" "}
-                        {occurrence.location}
-                      </span>
+        {!hasNoCourses && (
+          <section aria-label="Today's class" className={styles.classCard}>
+            {currentOrNext.kind === "none" ? (
+              <p className={styles.noClasses}>No more classes today.</p>
+            ) : (
+              (() => {
+                const occurrence = currentOrNext.occurrence;
+                const course = courseById.get(occurrence.courseId);
+                const { start, end } = occurrenceDateTimes(occurrence);
+                const time = `${start.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}–${end.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}`;
+                return (
+                  <>
+                    <p className={styles.classEyebrow}>
+                      {currentOrNext.kind === "in-progress" ? "In progress" : "Next class"}
+                    </p>
+                    <h2 className={styles.className}>
+                      {course?.name} — {occurrence.type}
+                    </h2>
+                    <p className={styles.classTime}>
+                      <span className={cn("numeric", styles.timeValue)}>{time}</span>
+                      {occurrence.location && (
+                        <span className={styles.location}>
+                          <MapPin size={14} strokeWidth={1.5} aria-hidden="true" />{" "}
+                          {occurrence.location}
+                        </span>
+                      )}
+                    </p>
+                    {currentOrNext.kind === "in-progress" && (
+                      <div className={styles.attendance}>
+                        <AttendanceControl
+                          occurrence={occurrence}
+                          onMark={(status) => markAttendance(occurrence.id, status)}
+                          now={now}
+                        />
+                      </div>
                     )}
-                  </p>
-                  {currentOrNext.kind === "in-progress" && (
-                    <div className={styles.attendance}>
-                      <AttendanceControl
-                        occurrence={occurrence}
-                        onMark={(status) => markAttendance(occurrence.id, status)}
-                        now={now}
-                      />
-                    </div>
-                  )}
-                </>
-              );
-            })()
-          )}
-        </section>
+                  </>
+                );
+              })()
+            )}
+          </section>
+        )}
 
         <section aria-label="Overdue and today's tasks" className={styles.taskSection}>
           {overdue.length > 0 && (
@@ -144,7 +153,12 @@ export function HomeScreen() {
           <section className={styles.checkIn} aria-label="Weekly check-in prompt">
             <p>How&rsquo;s this week going?</p>
             <div className={styles.checkInActions}>
-              <Button size="small" variant="secondary">
+              <Button
+                size="small"
+                variant="secondary"
+                disabled
+                title="Weekly check-in arrives in a later stage"
+              >
                 Quick check-in
               </Button>
               <button
@@ -159,10 +173,15 @@ export function HomeScreen() {
           </section>
         )}
 
-        {tasks.length === 0 && (
+        {hasNoCourses && (
           <EmptyState
             title="Add your first course"
             description="Once you add a course, Home will show what's next."
+            action={
+              <Button size="small" onClick={() => navigate("/courses")}>
+                Go to Courses
+              </Button>
+            }
           />
         )}
       </div>

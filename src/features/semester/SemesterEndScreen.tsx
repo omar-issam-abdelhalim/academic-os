@@ -4,22 +4,53 @@ import { Download, Image as ImageIcon, ShieldCheck } from "lucide-react";
 import { ScreenHeader } from "@/app/ScreenHeader";
 import { Button, StatusBadge } from "@/components";
 import { semesterDb } from "@/data/db";
-import { fixtureTasks, fixtureScheduleOccurrences } from "@/fixtures";
+import {
+  buildSemesterArchive,
+  downloadSemesterArchive,
+} from "@/data/repositories/exportRepository";
 import styles from "./SemesterEndScreen.module.css";
 
 /**
  * Semester End → review → Export (STAGE_1A_UX_ARCHITECTURE.md §O). A
  * *reviewing* flow, reachable any time — not gated behind a calendar end
- * date. The actual archive-generation engine is Stage 7; this reference
- * screen makes the export/no-delete relationship explicit and honest
- * about what isn't wired up yet, rather than faking a successful export.
+ * date. Export is real (Stage 3): it builds a self-validated JSON archive
+ * from the actual semester data and downloads it — it never deletes or
+ * modifies anything (PRODUCT_SPEC.md §16). Media export (personal
+ * images/handwritten notes, a separate zip) remains explicitly deferred —
+ * PRODUCT_SPEC.md §17 marks it a distinct, later feature.
  */
 export function SemesterEndScreen() {
   const semester = useLiveQuery(() => semesterDb.semester.toCollection().first(), []);
-  const [message, setMessage] = useState<string | null>(null);
+  const completedTaskCount = useLiveQuery(
+    () => semesterDb.tasks.filter((t) => t.completed).count(),
+    [],
+  );
+  const attendedCount = useLiveQuery(
+    () => semesterDb.scheduleOccurrences.filter((o) => o.status === "attended").count(),
+    [],
+  );
+  const [message, setMessage] = useState<{
+    tone: "info" | "success" | "danger";
+    text: string;
+  } | null>(null);
+  const [exporting, setExporting] = useState(false);
 
-  const completedTasks = fixtureTasks.filter((t) => t.completed).length;
-  const attended = fixtureScheduleOccurrences.filter((o) => o.status === "attended").length;
+  async function handleExport() {
+    setExporting(true);
+    setMessage(null);
+    try {
+      const archive = await buildSemesterArchive();
+      downloadSemesterArchive(archive);
+      setMessage({ tone: "success", text: "Semester archive downloaded." });
+    } catch {
+      setMessage({
+        tone: "danger",
+        text: "Couldn't build the export. Make sure a semester is active and try again.",
+      });
+    } finally {
+      setExporting(false);
+    }
+  }
 
   return (
     <div>
@@ -33,12 +64,12 @@ export function SemesterEndScreen() {
 
         <section className={styles.summary}>
           <p className={styles.summaryLine}>
-            <span className="numeric">{completedTasks}</span>{" "}
-            {completedTasks === 1 ? "task" : "tasks"} completed this semester
+            <span className="numeric">{completedTaskCount ?? 0}</span>{" "}
+            {completedTaskCount === 1 ? "task" : "tasks"} completed this semester
           </p>
           <p className={styles.summaryLine}>
-            <span className="numeric">{attended}</span> {attended === 1 ? "class" : "classes"}{" "}
-            attended (reference data)
+            <span className="numeric">{attendedCount ?? 0}</span>{" "}
+            {attendedCount === 1 ? "class" : "classes"} attended
           </p>
         </section>
 
@@ -54,11 +85,8 @@ export function SemesterEndScreen() {
           <Button
             variant="secondary"
             icon={<Download size={18} strokeWidth={1.5} aria-hidden="true" />}
-            onClick={() =>
-              setMessage(
-                "Semester archive export arrives in Stage 7 — this button is a reference placeholder.",
-              )
-            }
+            onClick={handleExport}
+            loading={exporting}
           >
             Export Semester Archive
           </Button>
@@ -66,9 +94,10 @@ export function SemesterEndScreen() {
             variant="secondary"
             icon={<ImageIcon size={18} strokeWidth={1.5} aria-hidden="true" />}
             onClick={() =>
-              setMessage(
-                "Media export arrives in Stage 7 — this button is a reference placeholder.",
-              )
+              setMessage({
+                tone: "info",
+                text: "Media export (personal images/handwritten notes) is planned for a later stage — this button is an honest placeholder.",
+              })
             }
           >
             Export Media
@@ -76,8 +105,8 @@ export function SemesterEndScreen() {
         </div>
 
         {message && (
-          <StatusBadge tone="info" className={styles.message}>
-            {message}
+          <StatusBadge tone={message.tone} className={styles.message}>
+            {message.text}
           </StatusBadge>
         )}
       </div>

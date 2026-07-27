@@ -4,6 +4,40 @@ All notable changes to this project are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-07-27
+
+Stage 3: real, persisted Course/Unit/Content/Schedule/Task/Attendance/Grade/Practice CRUD and Semester Export, replacing every remaining Stage 2 reference fixture. This release's scope corresponds to the original roadmap's Stages 3–5 combined plus the Semester Export portion of Stage 7 — see `docs/ROADMAP.md`'s Stage 3 entry for the documented scope redefinition, and `docs/STAGE_3_REPORT.md` for the full report. No new runtime or dev dependencies were added.
+
+### Added
+
+- **Courses**: full create/edit/delete, tag assignment, real `courseRepository` backing the Courses list and Course Detail (`src/data/repositories/courseRepository.ts`).
+- **Units**: full create/edit/delete/ordering (`unitRepository.ts`), a real Course Detail → Unit Detail workflow.
+- **Content Blocks**: real Markdown text blocks (write/preview, safely rendered via the existing `SafeMarkdown` renderer — no new dependency) and real file/image/video upload backed by a new `Blob` table (Dexie `academic-os-semester` schema version 2, purely additive) with intake validation (`src/domain/contentValidation.ts`) and object-URL preview/download.
+- **Tasks**: real create/edit/delete and completion toggling through `taskRepository.ts`, writing an immutable `TaskCompletionEvent` for every transition (never just a mutable boolean) alongside `Task`'s derived `completed`/`completedAt` fields, in one transaction. A shared `useTasks` hook keeps Home/Tasks/Course/Unit views in sync.
+- **Schedule**: real recurring `ScheduleTemplate` CRUD and lazy `ScheduleOccurrence` generation/materialization (`scheduleRepository.ts`, `src/domain/scheduleGeneration.ts`) — occurrences are generated on demand per viewed week and never regenerated from an edited/deleted template, preserving historical attendance exactly per DATA_MODEL.md.
+- **Attendance**: real marking/correcting through the existing `AttendanceControl`, now wired to persisted occurrences everywhere it appears (Home, Schedule week/day/grid views, Course Detail).
+- **Grades**: real Simple and Structured Mode entry/category CRUD (`gradeRepository.ts`), plus a completed grade-calculation domain layer (`src/domain/gradeSummary.ts`): current performance percent, remaining available points, max possible final score, required score for a target, and grade-boundary lookup.
+- **Practice**: real entry CRUD (`practiceRepository.ts`), kept structurally and visually distinct from Grades throughout.
+- **Tags**: unchanged (already real since Stage 2) — now genuinely exercised by real course assignment.
+- **Settings**: `notificationsEnabled` is now real, persisted `AppPreferences` state (was an in-memory stub).
+- **Semester Export**: a real, self-validated JSON archive (`exportRepository.ts`) built from live repository data and downloaded — the first real consumer of the previously-unused Zod dependency (`src/domain/archive.ts`'s versioned `semesterArchiveSchema`), which also lays the schema Import will validate against later.
+- **Home**: derives its "today's class"/task summary from real repository data instead of fixtures.
+- **Performance**: shows real current totals (task completion, attendance, recorded grades/practice) computed from live repository data instead of fixtures; the deeper trend/correlation analytics engine remains explicitly deferred.
+- **Command Palette**: real "Add course"/"Add task" quick-add actions (previously navigation-only).
+- Domain modules: `scheduleGeneration.ts`, `contentValidation.ts`, `archive.ts`, plus extensions to `gradeSummary.ts`.
+- Tests: 21 new/extended test files covering the new domain and repository layers plus two new form components (108 total unit/integration/component tests, up from 43); a new `e2e/workflow.spec.ts` covering the full new-user golden path and lifecycle invariants (task completion history, schedule-template edits never corrupting recorded attendance, course-rename propagation, export/new-semester independence).
+
+### Changed
+
+- `src/types/entities.ts`: added `StoredBlob`, `AppPreferences.notificationsEnabled`.
+- `src/data/db.ts`: `SemesterDatabase` gains schema version 2 (`blobs` table).
+- Every Stage 2 fixture-driven screen (Courses, Course Detail, Unit Detail, Tasks, Schedule, Grades, Practice, Home, Performance) now reads/writes real Dexie data via `dexie-react-hooks`' `useLiveQuery` instead of `src/fixtures/`.
+- `e2e/helpers.ts`: `SCREEN_ROUTES` paths are now functions of real, seeded ids (`seedRepresentativeSemester`) instead of static fixture-id strings, since Stage 3 removed the fixtures those slugs pointed at.
+
+### Removed
+
+- `src/fixtures/` (all of it) and its two fixture-backed hooks (`useFixtureTasks`, `useFixtureSchedule`) — no fixture-only production data path remains anywhere in the app.
+
 ## [0.2.1] - 2026-07-27
 
 Stage 2 finalization: infrastructure correction. Replaces the Netlify hosting decision — never successfully deployed, blocked on interactive login — with a permanent GitHub Pages + GitHub Actions deployment pipeline, and verifies the real production PWA. No product/UI/data-model changes.

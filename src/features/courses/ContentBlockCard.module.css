@@ -4,6 +4,19 @@
   padding: var(--space-4);
 }
 
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.cardActions {
+  display: flex;
+  gap: var(--space-1);
+  flex-shrink: 0;
+}
+
 .title {
   font: var(--text-label-default);
   color: var(--color-text-secondary);
@@ -44,7 +57,7 @@
 
 .fileCard {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: var(--space-3);
   width: 100%;
   text-align: left;
@@ -53,8 +66,10 @@
   border-radius: var(--radius-md);
 }
 
-.fileCard:hover {
-  border-color: var(--color-border-strong);
+.fileMain {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
 }
 
 .fileIcon {
@@ -72,4 +87,27 @@
 .fileSub {
   font: var(--text-body-small);
   color: var(--color-text-tertiary);
+}
+
+.imagePreview {
+  max-width: 100%;
+  max-height: 320px;
+  border-radius: var(--radius-sm);
+  object-fit: contain;
+}
+
+.videoPreview {
+  max-width: 100%;
+  border-radius: var(--radius-sm);
+}
+
+.fileActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.downloadLink {
+  font: var(--text-body-small);
+  color: var(--color-action-primary);
 }

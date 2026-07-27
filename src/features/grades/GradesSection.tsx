@@ -1,94 +1,148 @@
 import { useState } from "react";
-import { EmptyState, Button, StatusBadge } from "@/components";
+import { Trash2 } from "lucide-react";
+import { EmptyState, Button, IconButton } from "@/components";
 import {
   sumRecorded,
   summarizeCategory,
   topLevelCategories,
   childCategories,
+  currentPerformancePercent,
+  boundaryForPercent,
 } from "@/domain/gradeSummary";
-import type { GradeCategory, GradeEntry } from "@/types/entities";
+import {
+  createGradeEntry,
+  deleteGradeEntry,
+  createCategory,
+  deleteCategory,
+} from "@/data/repositories/gradeRepository";
+import { GradeEntryFormSheet } from "./GradeEntryFormSheet";
+import { GradeCategoryFormSheet } from "./GradeCategoryFormSheet";
+import type { GradeBoundary, GradeCategory, GradeEntry } from "@/types/entities";
 import styles from "./GradesSection.module.css";
 
 export interface GradesSectionProps {
+  courseId: string;
   categories: GradeCategory[];
   entries: GradeEntry[];
+  boundaries: GradeBoundary[];
 }
-
-const NOT_YET_WIRED_MESSAGE =
-  "Recording grades arrives in Stage 5 — this button is a reference placeholder for now.";
 
 /**
  * Course Detail's Grades tab (STAGE_1A_UX_ARCHITECTURE.md §L). Mode is
  * emergent: no categories → Simple Mode (flat list); any category exists
  * → Structured Mode (nested rollups). Never fabricates certainty — gaps
- * are always shown as "not yet recorded/allocated," never zero.
- *
- * "Add grade"/"Add course structure" are reference-only in Stage 2 (no
- * GradeEntry repository exists yet) — clicking them shows an explicit
- * message rather than doing nothing, so the UI never looks broken or
- * silently implies a save that didn't happen.
+ * are always shown as "not yet recorded/allocated," never zero. Backed by
+ * real `gradeRepository` data (Stage 3).
  */
-export function GradesSection({ categories, entries }: GradesSectionProps) {
-  const [message, setMessage] = useState<string | null>(null);
+export function GradesSection({ courseId, categories, entries, boundaries }: GradesSectionProps) {
+  const [entryFormOpen, setEntryFormOpen] = useState(false);
+  const [categoryFormOpen, setCategoryFormOpen] = useState(false);
+
+  const tops = topLevelCategories(categories);
+  const recorded = sumRecorded(entries);
+  const percent = currentPerformancePercent(recorded);
+  const boundary = percent !== undefined ? boundaryForPercent(boundaries, percent) : undefined;
+
+  const performanceLine =
+    percent !== undefined ? (
+      <p className={styles.performanceLine}>
+        Current performance: <span className="numeric">{percent.toFixed(1)}%</span>
+        {boundary && ` (${boundary.label})`}
+      </p>
+    ) : null;
 
   if (categories.length === 0 && entries.length === 0) {
     return (
-      <EmptyState
-        title="No grades yet"
-        description="Add grades as they come in (Simple Mode), or define your course's category structure upfront (Structured Mode) — you can switch to structure later without losing anything."
-        action={
-          <div className={styles.actionStack}>
-            <Button size="small" onClick={() => setMessage(NOT_YET_WIRED_MESSAGE)}>
-              Add grade
-            </Button>
-            {message && <StatusBadge tone="info">{message}</StatusBadge>}
-          </div>
-        }
-      />
+      <>
+        <EmptyState
+          title="No grades yet"
+          description="Add grades as they come in (Simple Mode), or define your course's category structure upfront (Structured Mode) — you can switch to structure later without losing anything."
+          action={
+            <div className={styles.actionStack}>
+              <Button size="small" onClick={() => setEntryFormOpen(true)}>
+                Add grade
+              </Button>
+              <Button size="small" variant="secondary" onClick={() => setCategoryFormOpen(true)}>
+                Add course structure
+              </Button>
+            </div>
+          }
+        />
+        <GradeEntryFormSheet
+          open={entryFormOpen}
+          onClose={() => setEntryFormOpen(false)}
+          categories={categories}
+          onSubmit={(values) => createGradeEntry({ courseId, ...values }).then(() => undefined)}
+        />
+        <GradeCategoryFormSheet
+          open={categoryFormOpen}
+          onClose={() => setCategoryFormOpen(false)}
+          topLevelCategories={tops}
+          onSubmit={(values) => createCategory({ courseId, ...values }).then(() => undefined)}
+        />
+      </>
     );
   }
 
   if (categories.length === 0) {
     // Simple Mode
-    const total = sumRecorded(entries);
     return (
       <div className={styles.section}>
         <div className={styles.totalCard}>
           <p className={styles.totalLabel}>Recorded so far</p>
           <p className={styles.totalValue}>
-            <span className="numeric">{total.earned}</span>
+            <span className="numeric">{recorded.earned}</span>
             <span className={styles.totalSlash}>/</span>
-            <span className="numeric">{total.max}</span>
+            <span className="numeric">{recorded.max}</span>
           </p>
+          {performanceLine}
         </div>
         <ul className={styles.entryList}>
           {entries.map((e) => (
             <li key={e.id} className={styles.entryRow}>
               <span>{e.label}</span>
-              <span className="numeric">
-                {e.scoreEarned}/{e.scoreMax}
+              <span className={styles.entryRight}>
+                <span className="numeric">
+                  {e.scoreEarned}/{e.scoreMax}
+                </span>
+                <IconButton
+                  aria-label={`Delete ${e.label}`}
+                  size="small"
+                  variant="ghost"
+                  onClick={() => deleteGradeEntry(e.id)}
+                >
+                  <Trash2 size={14} strokeWidth={1.5} aria-hidden="true" />
+                </IconButton>
               </span>
             </li>
           ))}
         </ul>
         <div className={styles.actionStack}>
-          <Button
-            variant="secondary"
-            size="small"
-            onClick={() => setMessage(NOT_YET_WIRED_MESSAGE)}
-          >
+          <Button size="small" onClick={() => setEntryFormOpen(true)}>
+            Add grade
+          </Button>
+          <Button variant="secondary" size="small" onClick={() => setCategoryFormOpen(true)}>
             Add course structure
           </Button>
-          {message && <StatusBadge tone="info">{message}</StatusBadge>}
         </div>
+        <GradeEntryFormSheet
+          open={entryFormOpen}
+          onClose={() => setEntryFormOpen(false)}
+          categories={categories}
+          onSubmit={(values) => createGradeEntry({ courseId, ...values }).then(() => undefined)}
+        />
+        <GradeCategoryFormSheet
+          open={categoryFormOpen}
+          onClose={() => setCategoryFormOpen(false)}
+          topLevelCategories={tops}
+          onSubmit={(values) => createCategory({ courseId, ...values }).then(() => undefined)}
+        />
       </div>
     );
   }
 
   // Structured Mode
-  const tops = topLevelCategories(categories);
   const courseMax = tops.reduce((sum, c) => sum + c.maxPoints, 0);
-  const allEntriesRecorded = sumRecorded(entries);
   const unassignedEntries = entries.filter((e) => !e.categoryId);
 
   return (
@@ -96,10 +150,11 @@ export function GradesSection({ categories, entries }: GradesSectionProps) {
       <div className={styles.totalCard}>
         <p className={styles.totalLabel}>Course total</p>
         <p className={styles.totalValue}>
-          <span className="numeric">{allEntriesRecorded.earned}</span>
+          <span className="numeric">{recorded.earned}</span>
           <span className={styles.totalSlash}>/</span>
           <span className="numeric">{courseMax}</span>
         </p>
+        {performanceLine}
       </div>
 
       {tops.map((top) => {
@@ -109,7 +164,17 @@ export function GradesSection({ categories, entries }: GradesSectionProps) {
           <div key={top.id} className={styles.categoryBlock}>
             <div className={styles.categoryHeader}>
               <span>{top.name}</span>
-              <span className="numeric">{top.maxPoints} pts</span>
+              <span className={styles.categoryHeaderRight}>
+                <span className="numeric">{top.maxPoints} pts</span>
+                <IconButton
+                  aria-label={`Delete ${top.name} category`}
+                  size="small"
+                  variant="ghost"
+                  onClick={() => deleteCategory(top.id)}
+                >
+                  <Trash2 size={13} strokeWidth={1.5} aria-hidden="true" />
+                </IconButton>
+              </span>
             </div>
             {children.length > 0 ? (
               <ul className={styles.entryList}>
@@ -160,14 +225,46 @@ export function GradesSection({ categories, entries }: GradesSectionProps) {
             {unassignedEntries.map((e) => (
               <li key={e.id} className={styles.entryRow}>
                 <span>{e.label}</span>
-                <span className="numeric">
-                  {e.scoreEarned}/{e.scoreMax}
+                <span className={styles.entryRight}>
+                  <span className="numeric">
+                    {e.scoreEarned}/{e.scoreMax}
+                  </span>
+                  <IconButton
+                    aria-label={`Delete ${e.label}`}
+                    size="small"
+                    variant="ghost"
+                    onClick={() => deleteGradeEntry(e.id)}
+                  >
+                    <Trash2 size={14} strokeWidth={1.5} aria-hidden="true" />
+                  </IconButton>
                 </span>
               </li>
             ))}
           </ul>
         </div>
       )}
+
+      <div className={styles.actionStack}>
+        <Button size="small" onClick={() => setEntryFormOpen(true)}>
+          Add grade
+        </Button>
+        <Button variant="secondary" size="small" onClick={() => setCategoryFormOpen(true)}>
+          Add category
+        </Button>
+      </div>
+
+      <GradeEntryFormSheet
+        open={entryFormOpen}
+        onClose={() => setEntryFormOpen(false)}
+        categories={categories}
+        onSubmit={(values) => createGradeEntry({ courseId, ...values }).then(() => undefined)}
+      />
+      <GradeCategoryFormSheet
+        open={categoryFormOpen}
+        onClose={() => setCategoryFormOpen(false)}
+        topLevelCategories={tops}
+        onSubmit={(values) => createCategory({ courseId, ...values }).then(() => undefined)}
+      />
     </div>
   );
 }

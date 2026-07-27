@@ -2,6 +2,11 @@
   padding: 0 var(--space-4) var(--space-8);
 }
 
+.menuAnchor {
+  position: relative;
+  display: inline-flex;
+}
+
 .courseHeader {
   display: flex;
   flex-direction: column;

@@ -1,10 +1,14 @@
 import { useState } from "react";
-import { Sparkles } from "lucide-react";
-import { EmptyState, Button, StatusBadge } from "@/components";
+import { Sparkles, Trash2 } from "lucide-react";
+import { EmptyState, Button, IconButton } from "@/components";
+import { createPracticeEntry, deletePracticeEntry } from "@/data/repositories/practiceRepository";
+import { PracticeEntryFormSheet } from "./PracticeEntryFormSheet";
 import type { PracticeEntry } from "@/types/entities";
 import styles from "./PracticeSection.module.css";
 
 export interface PracticeSectionProps {
+  courseId: string;
+  unitId?: string;
   entries: PracticeEntry[];
 }
 
@@ -12,53 +16,68 @@ export interface PracticeSectionProps {
  * Never inside the Grades tab — distinct icon/accent everywhere Practice
  * appears, distinct empty-state copy (STAGE_1A_UX_ARCHITECTURE.md §M).
  * Practice entries are never summed into or displayed as comparable to
- * GradeEntries.
- *
- * "Add practice score" is reference-only in Stage 2 (no PracticeEntry
- * repository exists yet) — clicking it shows an explicit message rather
- * than doing nothing.
+ * GradeEntries. Backed by real `practiceRepository` data (Stage 3).
  */
-export function PracticeSection({ entries }: PracticeSectionProps) {
-  const [message, setMessage] = useState<string | null>(null);
+export function PracticeSection({ courseId, unitId, entries }: PracticeSectionProps) {
+  const [formOpen, setFormOpen] = useState(false);
+
+  async function handleSubmit(values: { label: string; scoreEarned: number; scoreMax: number }) {
+    await createPracticeEntry({ courseId, unitId, ...values });
+  }
 
   if (entries.length === 0) {
     return (
-      <EmptyState
-        icon={<Sparkles size={28} strokeWidth={1.5} aria-hidden="true" />}
-        title="No practice scores yet"
-        description="Practice scores help you gauge your own understanding — they never affect your official grade."
-        action={
-          <div className={styles.actionStack}>
-            <Button
-              size="small"
-              onClick={() =>
-                setMessage(
-                  "Recording practice scores arrives in Stage 5 — this button is a reference placeholder for now.",
-                )
-              }
-            >
+      <>
+        <EmptyState
+          icon={<Sparkles size={28} strokeWidth={1.5} aria-hidden="true" />}
+          title="No practice scores yet"
+          description="Practice scores help you gauge your own understanding — they never affect your official grade."
+          action={
+            <Button size="small" onClick={() => setFormOpen(true)}>
               Add practice score
             </Button>
-            {message && <StatusBadge tone="info">{message}</StatusBadge>}
-          </div>
-        }
-      />
+          }
+        />
+        <PracticeEntryFormSheet
+          open={formOpen}
+          onClose={() => setFormOpen(false)}
+          onSubmit={handleSubmit}
+        />
+      </>
     );
   }
 
   return (
-    <ul className={styles.list}>
-      {entries.map((entry) => (
-        <li key={entry.id} className={styles.row}>
-          <Sparkles size={16} strokeWidth={1.5} className={styles.icon} aria-hidden="true" />
-          <span className={styles.label}>{entry.label}</span>
-          <span className={styles.score}>
-            <span className="numeric">
-              {entry.scoreEarned}/{entry.scoreMax}
+    <div className={styles.wrap}>
+      <ul className={styles.list}>
+        {entries.map((entry) => (
+          <li key={entry.id} className={styles.row}>
+            <Sparkles size={16} strokeWidth={1.5} className={styles.icon} aria-hidden="true" />
+            <span className={styles.label}>{entry.label}</span>
+            <span className={styles.score}>
+              <span className="numeric">
+                {entry.scoreEarned}/{entry.scoreMax}
+              </span>
             </span>
-          </span>
-        </li>
-      ))}
-    </ul>
+            <IconButton
+              aria-label={`Delete ${entry.label}`}
+              size="small"
+              variant="ghost"
+              onClick={() => deletePracticeEntry(entry.id)}
+            >
+              <Trash2 size={14} strokeWidth={1.5} aria-hidden="true" />
+            </IconButton>
+          </li>
+        ))}
+      </ul>
+      <Button size="small" variant="secondary" onClick={() => setFormOpen(true)}>
+        Add practice score
+      </Button>
+      <PracticeEntryFormSheet
+        open={formOpen}
+        onClose={() => setFormOpen(false)}
+        onSubmit={handleSubmit}
+      />
+    </div>
   );
 }

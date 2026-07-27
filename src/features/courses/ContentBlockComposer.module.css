@@ -1,0 +1,21 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.preview {
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  min-height: 120px;
+}
+
+.previewEmpty {
+  color: var(--color-text-tertiary);
+  font: var(--text-body-small);
+}
+
+.fileInput {
+  font: var(--text-body-small);
+}

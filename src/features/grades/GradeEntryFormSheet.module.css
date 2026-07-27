@@ -1,0 +1,14 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.scoreRow {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.scoreRow > * {
+  flex: 1;
+}

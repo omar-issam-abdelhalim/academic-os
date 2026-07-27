@@ -12,6 +12,7 @@ export interface AppPreferences {
   id: "singleton";
   theme: "system" | "light" | "dark";
   hasCompletedOnboarding: boolean;
+  notificationsEnabled: boolean;
   lastExportReminderAt?: string;
 }
 
@@ -88,6 +89,17 @@ interface ContentBlockBase {
   order: number;
   createdAt: string;
   updatedAt: string;
+}
+
+/** Dedicated table, deliberately separate from ContentBlock metadata
+ * (DATA_MODEL.md §Blob) — kept apart so metadata-only queries (rendering a
+ * unit's block list) never pull binary payloads into memory. */
+export interface StoredBlob {
+  id: string;
+  mimeType: string;
+  sizeBytes: number;
+  data: Blob;
+  createdAt: string;
 }
 
 export interface Task {

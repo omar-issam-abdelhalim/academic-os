@@ -5,8 +5,10 @@ import {
   DESKTOP_VIEWPORTS,
   SCREEN_ROUTES,
   createSemester,
+  seedRepresentativeSemester,
   hasHorizontalOverflow,
   waitForLayoutSettle,
+  type SeededIds,
 } from "./helpers";
 
 test.describe("Responsive — no horizontal overflow at any screen × viewport", () => {
@@ -14,13 +16,15 @@ test.describe("Responsive — no horizontal overflow at any screen × viewport",
     test.describe(`${viewport.name} (${viewport.width}×${viewport.height})`, () => {
       test.use({ viewport: { width: viewport.width, height: viewport.height } });
 
+      let seeded: SeededIds;
       test.beforeEach(async ({ page }) => {
         await createSemester(page);
+        seeded = await seedRepresentativeSemester(page);
       });
 
       for (const screen of SCREEN_ROUTES) {
         test(`${screen.name} has no horizontal overflow`, async ({ page }) => {
-          await page.goto(screen.path);
+          await page.goto(screen.path(seeded));
           await page.waitForLoadState("networkidle");
           expect(
             await hasHorizontalOverflow(page),
@@ -99,6 +103,7 @@ test.describe("Dialogs stay within the viewport", () => {
   test("desktop: Schedule grid event detail dialog fits on screen", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await createSemester(page);
+    await seedRepresentativeSemester(page); // includes a template for "today"
     await page.goto("/schedule");
     await page.locator('[class*="event"]').first().click();
     const dialog = page.getByRole("dialog");
@@ -111,18 +116,20 @@ test.describe("Dialogs stay within the viewport", () => {
 });
 
 test.describe("Long content does not break layout", () => {
-  test("Courses grid: longest fixture course name does not overflow at 320px", async ({ page }) => {
+  test("Courses grid: a long real course name does not overflow at 320px", async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 690 });
     await createSemester(page);
+    await seedRepresentativeSemester(page);
     await page.goto("/courses");
     await expect(page.getByText("Machine Learning Specialization")).toBeVisible();
     expect(await hasHorizontalOverflow(page)).toBe(false);
   });
 
-  test("Unit Detail: long unit title does not overflow at 320px", async ({ page }) => {
+  test("Unit Detail: a long real unit title does not overflow at 320px", async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 690 });
     await createSemester(page);
-    await page.goto("/courses/course-csai101/units/unit-csai-l4");
+    const seeded = await seedRepresentativeSemester(page);
+    await page.goto(`/courses/${seeded.courseAId}/units/${seeded.unitAId}`);
     await expect(page.getByText("Lecture 04 — Neural Networks")).toBeVisible();
     expect(await hasHorizontalOverflow(page)).toBe(false);
   });
