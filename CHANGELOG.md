@@ -4,6 +4,24 @@ All notable changes to this project are documented in this file. Format follows 
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-07-27
+
+Stage 4: deterministic academic analytics — semester/course metrics, trend analysis, and an explainable insight engine, replacing Performance's Stage 3 "real totals only" placeholder with the actual analytics product `docs/ROADMAP.md`'s original Stage 6 described (pulled forward into "Stage 4" by the product owner's task prompt — see `docs/ROADMAP.md` and `docs/STAGE_4_REPORT.md`). Everything is computed client-side from real Stage 3 data; nothing is AI/LLM-generated, random, or fixture-driven. One new runtime dependency (Recharts), already pre-approved in `docs/ARCHITECTURE.md`'s stack table.
+
+### Added
+
+- `src/domain/analytics/` — a new pure, fully-tested analytics domain layer: `trend.ts` (deterministic improving/declining/stable/insufficient-data classification), `taskAnalytics.ts`, `attendanceAnalytics.ts`, `gradeAnalytics.ts`, `practiceAnalytics.ts` (per-dimension metrics, each respecting the exact Stage 3 semantics — `TaskCompletionEvent` history, cancelled/unmarked attendance exclusion, both grade modes, Practice kept separate from Grades), `courseAnalytics.ts` (a multi-dimensional per-course profile — deliberately no single blended "course score"), `semesterAnalytics.ts` (semester-wide aggregation as a ratio of sums, never a naive average of each course's percentage), and `insights.ts` (a bounded, deterministic insight engine with documented thresholds and priority ranking).
+- `src/features/shared/useAnalytics.ts` — the single reactive hook (`useSemesterAnalytics`, `useInsights`) every analytics surface reads from; recomputes automatically via `dexie-react-hooks` whenever a task/attendance/grade/practice/course record changes anywhere in the app.
+- **Performance** is now the real analytics dashboard: a semester overview that distinguishes "no data yet" from a real 0%, real trend charts (Recharts line charts, never rendered from fewer than 2 chronological points), a per-course comparison table, and a ranked "Academic insights" list with human-readable evidence for every insight.
+- **Home** gains exactly one plain-text, top-priority insight line (no chart, no widget) — the one exception `STAGE_1A_UX_ARCHITECTURE.md` §G already allowed ("at most one plain-text weekly stat… never before there's enough data to be meaningful"), sourced from the same insight engine Performance uses.
+- **Course Detail** gains a "View analytics for this course" link into Performance's course filter (`?course=` query param) — no new tab, matching §H's explicit "no dedicated Course Detail Analytics tab in v1."
+- Tests: 42 new domain unit tests (trend/task/attendance/grade/practice/semester/insight rules — real math assertions, not snapshots) plus a real-Dexie integration test proving the analytics hook updates reactively after mutating persisted data; a new `e2e/analytics.spec.ts` golden path (real course/task/attendance/grade/practice data → real calculated Performance metrics → insight → mutate → re-verify → Course Detail link → Home insight → reload).
+
+### Changed
+
+- `package.json`: added `recharts`. Introduces zero new `npm audit` advisories.
+- `docs/ARCHITECTURE.md`: Recharts moved from "planned for Stage 6" to installed/consumed.
+
 ## [0.3.0] - 2026-07-27
 
 Stage 3: real, persisted Course/Unit/Content/Schedule/Task/Attendance/Grade/Practice CRUD and Semester Export, replacing every remaining Stage 2 reference fixture. This release's scope corresponds to the original roadmap's Stages 3–5 combined plus the Semester Export portion of Stage 7 — see `docs/ROADMAP.md`'s Stage 3 entry for the documented scope redefinition, and `docs/STAGE_3_REPORT.md` for the full report. No new runtime or dev dependencies were added.

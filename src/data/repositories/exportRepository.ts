@@ -3,7 +3,7 @@ import { withStorageErrorHandling } from "@/data/storageErrors";
 import { ARCHIVE_VERSION, parseSemesterArchive, type SemesterArchive } from "@/domain/archive";
 import type { ContentBlock } from "@/types/entities";
 
-const APP_VERSION = "0.3.0";
+const APP_VERSION = "0.4.0";
 
 function toContentBlockMetadata(block: ContentBlock) {
   const base = {

@@ -77,6 +77,35 @@
   padding: var(--space-2) 0;
 }
 
+.insightLine {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-md);
+  text-align: left;
+  font: var(--text-body-small);
+  color: var(--color-text-secondary);
+  min-height: 44px;
+}
+.insightLine:hover {
+  border-color: var(--color-border-strong);
+}
+
+.insightIcon {
+  flex-shrink: 0;
+}
+.insightIcon[data-severity="attention"] {
+  color: var(--color-status-warning);
+}
+.insightIcon[data-severity="positive"] {
+  color: var(--color-status-success);
+}
+.insightIcon[data-severity="info"] {
+  color: var(--color-status-info);
+}
+
 .checkIn {
   display: flex;
   align-items: center;

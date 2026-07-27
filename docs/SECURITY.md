@@ -38,7 +38,7 @@ This is a **static, backend-less SPA**: the deployed artifact is HTML/CSS/JS ser
 - Dependency count is kept intentionally small (see ARCHITECTURE.md's stack table) — fewer dependencies is directly fewer transitive vulnerabilities and less supply-chain surface.
 - `package-lock.json` is committed so builds are reproducible and reviewable.
 - `npm audit` runs in CI; Dependabot (or equivalent) is enabled on the GitHub repo for automated dependency update PRs.
-- New dependencies are added deliberately — checked for maintenance activity/popularity before adoption, not pulled in casually for minor convenience.
+- New dependencies are added deliberately — checked for maintenance activity/popularity before adoption, not pulled in casually for minor convenience. **Recharts (Stage 4)**: an already-planned dependency (ARCHITECTURE.md's stack table pre-approved it for charting), actively maintained, renders plain SVG client-side from already-local data, makes no network calls, and introduces zero new `npm audit` advisories (verified at install time).
 
 ## 5. Service Worker Risks
 

@@ -2,7 +2,7 @@
 
 A premium, local-first academic and learning management Progressive Web App — a personal academic operating system for organizing courses, units, materials, tasks, weekly schedule, attendance, grades, practice performance, analytics, and semester exports.
 
-**Status:** Stage 0 (specification & architecture), Stage 2 (engineering foundation, live UI, PWA, CI), and Stage 3 (real Course/Unit/Content/Schedule/Task/Attendance/Grade/Practice persistence and Semester Export, replacing every Stage 2 reference fixture) are complete. Stage 1A (UX architecture) is approved; Stage 1B (visual design system) established approved token foundations before moving to direct implementation — see [docs/ROADMAP.md](./docs/ROADMAP.md) and [docs/STAGE_3_REPORT.md](./docs/STAGE_3_REPORT.md). Analytics (original Stage 6) and Import/Media Export/security hardening/`1.0.0` (the remainder of the original Stage 7) have not started.
+**Status:** Stage 0 (specification & architecture), Stage 2 (engineering foundation, live UI, PWA, CI), Stage 3 (real Course/Unit/Content/Schedule/Task/Attendance/Grade/Practice persistence and Semester Export, replacing every Stage 2 reference fixture), and Stage 4 (deterministic academic analytics — semester/course metrics, trend analysis, and an explainable insight engine, surfaced in a rebuilt Performance dashboard) are complete. Stage 1A (UX architecture) is approved; Stage 1B (visual design system) established approved token foundations before moving to direct implementation — see [docs/ROADMAP.md](./docs/ROADMAP.md), [docs/STAGE_3_REPORT.md](./docs/STAGE_3_REPORT.md), and [docs/STAGE_4_REPORT.md](./docs/STAGE_4_REPORT.md). Notifications, Import/Media Export, security hardening, and `1.0.0` have not started.
 
 ## Quick Start
 
@@ -31,6 +31,7 @@ This repository is documentation-first — read the relevant docs before changin
 8. [docs/STAGE_1B_DESIGN_SYSTEM.md](./docs/STAGE_1B_DESIGN_SYSTEM.md) — approved visual foundations (tokens)
 9. [docs/STAGE_2_REPORT.md](./docs/STAGE_2_REPORT.md) — what Stage 2 delivered and what's still a fixture vs. real
 10. [docs/STAGE_3_REPORT.md](./docs/STAGE_3_REPORT.md) — what Stage 3 delivered (real persistence replacing every remaining fixture) and what's still deferred
+11. [docs/STAGE_4_REPORT.md](./docs/STAGE_4_REPORT.md) — the analytics engine: metric definitions, trend rules, insight rules, and what's still deferred
 
 ## Principles
 

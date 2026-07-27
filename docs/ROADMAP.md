@@ -22,7 +22,7 @@ Actual project scaffold: `package.json`, Vite + React + TypeScript setup, ESLint
 
 > **Scope note (documented, not silently improvised):** the product owner's Stage 3 task prompt redefined "Stage 3" to include everything below that was previously split across this roadmap's original Stage 3 (Courses/Units/Content), Stage 4 (Schedule/Tasks/Attendance — notifications excluded, see below), Stage 5 (Grades/Practice), and the Semester Export portion of the original Stage 7 (PRODUCT_SPEC.md §16, which was never marked "future" the way Import and Media Export are). This roadmap is updated to reflect that as the actual, approved scope of the work completed under the "Stage 3" name — the original finer-grained staging below is preserved as a historical record of the original plan, not as a claim that four separate stages shipped independently.
 >
-> Explicitly **not** included in this redefined Stage 3, and still pending: the in-app-open Notification baseline (part of the original Stage 4 — no scheduling UI beyond the real `notificationsEnabled` preference toggle), the Analytics/Semester-Intelligence engine (original Stage 6 — Performance shows real current totals, not trends/correlation insights), and Import/Media Export/"New Semester" security hardening/dependency audit/`1.0.0` (the remainder of the original Stage 7 — "Start New Semester" itself was already real since Stage 2). See `docs/STAGE_3_REPORT.md` for the full accounting.
+> Explicitly **not** included in this redefined Stage 3, and pending at the time: the in-app-open Notification baseline (part of the original Stage 4 — no scheduling UI beyond the real `notificationsEnabled` preference toggle), the Analytics/Semester-Intelligence engine (original Stage 6 — Performance showed real current totals only, not trends/correlation insights; **since delivered, see the "Stage 4 (continued)" entry below**), and Import/Media Export/"New Semester" security hardening/dependency audit/`1.0.0` (the remainder of the original Stage 7 — "Start New Semester" itself was already real since Stage 2). See `docs/STAGE_3_REPORT.md` for the full accounting.
 
 <details>
 <summary>Original Stage 3–5 plan (superseded by the redefinition above — kept for historical record)</summary>
@@ -38,12 +38,20 @@ Simple and Structured grading modes, grade categories/boundaries, grade calculat
 
 </details>
 
-## Stage 6 — Analytics & Semester Intelligence
-Dashboards over the raw data accumulated by Stage 3: task completion, attendance, practice, grades, weekly/semester trends, strongest/weakest units, and correlation-only (never causal) insight copy, per PRODUCT_SPEC.md §13. Not started — Performance (Stage 3) shows real current totals only, not trend/correlation analytics.
+## Stage 4 (continued) — Analytics, Trends & Actionable Intelligence
+**Status: complete — see `docs/STAGE_4_REPORT.md`.** A second product-owner task prompt further redefined scope: the original Stage 6 (Analytics & Semester Intelligence) was pulled forward and delivered as part of "Stage 4," on top of Stage 3's real persistence. Deterministic (never AI/LLM-generated) task/attendance/grade/practice analytics, weighted semester aggregation, trend classification (improving/declining/stable/insufficient-data) with documented thresholds, and an explainable insight engine — all computed client-side from real Stage 3 data, with correlation-only, never-causal framing throughout (PRODUCT_SPEC.md §13). Performance Hub was rebuilt into the real analytics dashboard the original Stage 6 entry below describes; Home gained exactly the one plain-text insight line STAGE_1A_UX_ARCHITECTURE.md §G already allowed, never a chart or widget; Course Detail gained a link into the Performance Hub's course filter rather than a dedicated analytics tab (§H already ruled that out for v1).
+
+<details>
+<summary>Original Stage 6 plan (delivered under the "Stage 4" name above — kept for historical record)</summary>
+
+### Stage 6 — Analytics & Semester Intelligence (original scope)
+Dashboards over the raw data accumulated by Stage 3: task completion, attendance, practice, grades, weekly/semester trends, strongest/weakest units, and correlation-only (never causal) insight copy, per PRODUCT_SPEC.md §13.
+
+</details>
 
 ## Stage 7 — Import, Media Export, Security Hardening & Production v1.0.0
 Semester archive **Import** (with full untrusted-input validation per SECURITY.md — the archive schema and export-time self-validation already exist from Stage 3, ready for Import to consume), separate Media Export, CSP hardening, dependency audit, a full accessibility pass, and the first `1.0.0` production release. (Semester **Export** and "Start New Semester" are already real — delivered in Stage 3 and Stage 2 respectively.) Not started.
 
 ---
 
-Stage boundaries may be refined slightly if a concrete technical reason emerges during a stage (e.g. discovering PWA notification work is better split across Stage 4 and a later stage) — but stages are not to be merged wholesale to save time; each is meant to produce a genuinely reviewable increment. Stage 3's redefinition above is the one documented exception, made explicitly by the product owner's own task prompt rather than an implementer's unilateral choice.
+Stage boundaries may be refined slightly if a concrete technical reason emerges during a stage (e.g. discovering PWA notification work is better split across Stage 4 and a later stage) — but stages are not to be merged wholesale to save time; each is meant to produce a genuinely reviewable increment. Stage 3's and Stage 4's redefinitions above are the two documented exceptions, both made explicitly by the product owner's own task prompts rather than an implementer's unilateral choice.

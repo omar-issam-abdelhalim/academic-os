@@ -1,95 +1,135 @@
-import { useMemo, useState } from "react";
-import { useLiveQuery } from "dexie-react-hooks";
+import { useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import { ScreenHeader } from "@/app/ScreenHeader";
-import { Select, StatusBadge } from "@/components";
-import { semesterDb } from "@/data/db";
-import { sumRecorded } from "@/domain/gradeSummary";
+import { Select, Skeleton } from "@/components";
+import { useSemesterAnalytics } from "@/features/shared/useAnalytics";
+import { generateInsights } from "@/domain/analytics/insights";
+import type { CourseAnalyticsProfile } from "@/domain/analytics/courseAnalytics";
+import { TrendChart, type TrendChartPoint } from "./TrendChart";
+import { InsightCard } from "./InsightCard";
 import styles from "./PerformanceScreen.module.css";
 
-function StatBar({
+function round1(value: number): number {
+  return Math.round(value * 10) / 10;
+}
+
+function formatWeekLabel(iso: string): string {
+  return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+function StatCard({
   label,
-  value,
-  max,
+  percent,
+  detail,
   tone,
 }: {
   label: string;
-  value: number;
-  max: number;
+  percent: number | undefined;
+  detail: string;
   tone: "success" | "info" | "warning";
 }) {
-  const percent = max > 0 ? Math.round((value / max) * 100) : 0;
   return (
     <div className={styles.stat}>
       <div className={styles.statHeader}>
         <span>{label}</span>
-        <span className="numeric">{percent}%</span>
+        {percent !== undefined && <span className="numeric">{round1(percent)}%</span>}
       </div>
-      <div className={styles.barTrack}>
-        <div className={styles.barFill} data-tone={tone} style={{ width: `${percent}%` }} />
-      </div>
+      {percent !== undefined ? (
+        <div className={styles.barTrack}>
+          <div
+            className={styles.barFill}
+            data-tone={tone}
+            style={{ width: `${Math.min(percent, 100)}%` }}
+          />
+        </div>
+      ) : (
+        <p className={styles.noData}>No data yet</p>
+      )}
+      <p className={styles.statDetail}>{detail}</p>
     </div>
   );
 }
 
 /**
- * Performance Hub (STAGE_1A_UX_ARCHITECTURE.md §N) — totals below are real,
- * computed from the same repositories every other screen uses (Stage 3).
- * The deeper analytics engine (weekly/semester trends, strongest units,
- * correlation insights) remains explicitly deferred to a later stage; this
- * screen shows honest current totals, not a final analytics product.
- * Correlational framing only, never causal (PRODUCT_SPEC.md §13).
+ * Performance Hub (STAGE_1A_UX_ARCHITECTURE.md §N) — the primary Academic
+ * Analytics dashboard (Stage 4). No dedicated Course Detail analytics tab
+ * exists (§H) — a course's trend data lives here, reached either via this
+ * screen's own course filter or a "View analytics" link from Course
+ * Detail (`?course=` query param). Every metric distinguishes "no data
+ * yet" from a real 0%, and every chart requires at least 2 chronological
+ * points before it renders at all.
  */
 export function PerformanceScreen() {
-  const [courseFilter, setCourseFilter] = useState<string>("all");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const courseFilter = searchParams.get("course") ?? "all";
+  const analytics = useSemesterAnalytics();
 
-  const coursesQuery = useLiveQuery(() => semesterDb.courses.toArray(), []);
-  const tasksQuery = useLiveQuery(() => semesterDb.tasks.toArray(), []);
-  const occurrencesQuery = useLiveQuery(() => semesterDb.scheduleOccurrences.toArray(), []);
-  const gradeEntriesQuery = useLiveQuery(() => semesterDb.gradeEntries.toArray(), []);
-  const practiceEntriesQuery = useLiveQuery(() => semesterDb.practiceEntries.toArray(), []);
-  const courses = useMemo(() => coursesQuery ?? [], [coursesQuery]);
-  const gradeEntries = useMemo(() => gradeEntriesQuery ?? [], [gradeEntriesQuery]);
+  const insights = useMemo(() => (analytics ? generateInsights(analytics) : []), [analytics]);
 
-  const stats = useMemo(() => {
-    const tasks = tasksQuery ?? [];
-    const occurrences = occurrencesQuery ?? [];
-    const entries = gradeEntriesQuery ?? [];
-    const practiceEntries = practiceEntriesQuery ?? [];
+  type Scope = {
+    tasks: CourseAnalyticsProfile["tasks"];
+    attendance: CourseAnalyticsProfile["attendance"];
+    grades: CourseAnalyticsProfile["grades"];
+    practice: CourseAnalyticsProfile["practice"];
+  };
+  const scope: Scope | undefined = useMemo(() => {
+    if (!analytics) return undefined;
+    const course =
+      courseFilter === "all"
+        ? undefined
+        : analytics.courses.find((c) => c.course.id === courseFilter);
+    // Falls back to the semester-wide scope if the selected course id no
+    // longer resolves (e.g. deleted while this filter was still applied)
+    // rather than rendering a dead end.
+    if (course) {
+      return {
+        tasks: course.tasks,
+        attendance: course.attendance,
+        grades: course.grades,
+        practice: course.practice,
+      };
+    }
+    return {
+      tasks: analytics.tasks,
+      attendance: analytics.attendance,
+      grades: analytics.grades,
+      practice: analytics.practice,
+    };
+  }, [analytics, courseFilter]);
 
-    const filteredTasks = tasks.filter(
-      (t) => courseFilter === "all" || t.courseId === courseFilter,
+  function setCourseFilter(next: string) {
+    setSearchParams(next === "all" ? {} : { course: next });
+  }
+
+  if (!analytics || !scope) {
+    return (
+      <div>
+        <ScreenHeader title="Performance" />
+        <div className={styles.content}>
+          <Skeleton style={{ height: 120 }} />
+          <Skeleton style={{ height: 200 }} />
+        </div>
+      </div>
     );
-    const taskTotal = filteredTasks.length;
-    const taskDone = filteredTasks.filter((t) => t.completed).length;
+  }
 
-    const filteredOccurrences = occurrences.filter(
-      (o) => courseFilter === "all" || o.courseId === courseFilter,
-    );
-    const attended = filteredOccurrences.filter((o) => o.status === "attended").length;
-    const missed = filteredOccurrences.filter((o) => o.status === "missed").length;
-
-    const filteredGrades = entries.filter(
-      (e) => courseFilter === "all" || e.courseId === courseFilter,
-    );
-    const gradeTotal = sumRecorded(filteredGrades);
-
-    const filteredPractice = practiceEntries.filter(
-      (p) => courseFilter === "all" || p.courseId === courseFilter,
-    );
-    const practiceTotal = sumRecorded(filteredPractice);
-
-    return { taskTotal, taskDone, attended, missed, gradeTotal, practiceTotal };
-  }, [courseFilter, tasksQuery, occurrencesQuery, gradeEntriesQuery, practiceEntriesQuery]);
+  const attendancePoints: TrendChartPoint[] = scope.attendance.weeklyRates.map((p) => ({
+    label: formatWeekLabel(String(p.at)),
+    value: p.value,
+  }));
+  const gradePoints: TrendChartPoint[] = scope.grades.series.map((p) => ({
+    label: formatWeekLabel(String(p.at)),
+    value: p.value,
+  }));
+  const practicePoints: TrendChartPoint[] = scope.practice.series.map((p) => ({
+    label: formatWeekLabel(String(p.at)),
+    value: p.value,
+  }));
 
   return (
     <div>
       <ScreenHeader title="Performance" />
       <div className={styles.content}>
-        <StatusBadge tone="info" className={styles.disclaimer}>
-          Real totals from your semester data — weekly/semester trend analytics arrive in a later
-          stage.
-        </StatusBadge>
-
         <Select
           aria-label="Filter by course"
           value={courseFilter}
@@ -97,68 +137,123 @@ export function PerformanceScreen() {
           className={styles.select}
         >
           <option value="all">All courses</option>
-          {courses.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
+          {analytics.courses.map(({ course }) => (
+            <option key={course.id} value={course.id}>
+              {course.name}
             </option>
           ))}
         </Select>
 
-        <div className={styles.grid}>
-          <StatBar
+        <section aria-label="Semester overview" className={styles.grid}>
+          <StatCard
             label="Task completion"
-            value={stats.taskDone}
-            max={stats.taskTotal || 1}
+            percent={scope.tasks.completionRate}
+            detail={`${scope.tasks.completed} of ${scope.tasks.totalRelevant} tasks completed`}
             tone="info"
           />
-          <StatBar
+          <StatCard
             label="Attendance"
-            value={stats.attended}
-            max={stats.attended + stats.missed || 1}
+            percent={scope.attendance.attendanceRate}
+            detail={`${scope.attendance.attended} attended, ${scope.attendance.missed} missed`}
             tone="success"
           />
-          {stats.gradeTotal.max > 0 && (
-            <StatBar
-              label="Grades recorded"
-              value={stats.gradeTotal.earned}
-              max={stats.gradeTotal.max}
-              tone="info"
-            />
-          )}
-          {stats.practiceTotal.max > 0 && (
-            <StatBar
-              label="Practice average"
-              value={stats.practiceTotal.earned}
-              max={stats.practiceTotal.max}
-              tone="warning"
-            />
-          )}
-        </div>
+          <StatCard
+            label="Grades recorded"
+            percent={scope.grades.performancePercent}
+            detail={`${scope.grades.recordedEarned}/${scope.grades.recordedMax} recorded`}
+            tone="info"
+          />
+          <StatCard
+            label="Practice performance"
+            percent={scope.practice.normalizedPercent}
+            detail={`${scope.practice.recordedEarned}/${scope.practice.recordedMax} recorded`}
+            tone="warning"
+          />
+        </section>
 
-        <section className={styles.insightSection}>
-          <h3 className={styles.sectionTitle}>Course comparison</h3>
-          {courses.length === 0 ? (
+        <section aria-label="Trends">
+          <h3 className={styles.sectionTitle}>Trends</h3>
+          <div className={styles.chartGrid}>
+            <TrendChart
+              title="Attendance rate by week"
+              data={attendancePoints}
+              trend={scope.attendance.trend}
+              color="var(--color-status-success)"
+              emptyMessage="Not enough recorded attendance yet to show a trend."
+            />
+            <TrendChart
+              title="Grade performance over time"
+              data={gradePoints}
+              trend={scope.grades.trend}
+              color="var(--color-status-info)"
+              emptyMessage="Not enough grade history yet to show a trend."
+            />
+            <TrendChart
+              title="Practice performance over time"
+              data={practicePoints}
+              trend={scope.practice.trend}
+              color="var(--color-status-warning)"
+              emptyMessage="Not enough practice history yet to show a trend."
+            />
+          </div>
+        </section>
+
+        <section aria-label="Course performance">
+          <h3 className={styles.sectionTitle}>Course performance</h3>
+          {analytics.courses.length === 0 ? (
             <p className={styles.footnote}>Add a course to see it compared here.</p>
           ) : (
-            <ul className={styles.courseList}>
-              {courses.map((c) => {
-                const courseEntries = gradeEntries.filter((e) => e.courseId === c.id);
-                const total = sumRecorded(courseEntries);
-                return (
-                  <li key={c.id} className={styles.courseRow}>
-                    <span>{c.name}</span>
-                    <span className="numeric">
-                      {total.max > 0 ? `${total.earned}/${total.max}` : "—"}
-                    </span>
-                  </li>
-                );
-              })}
+            <div className={styles.courseTable} role="table" aria-label="Per-course metrics">
+              <div className={styles.courseTableHeader} role="row">
+                <span role="columnheader">Course</span>
+                <span role="columnheader">Tasks</span>
+                <span role="columnheader">Attendance</span>
+                <span role="columnheader">Grades</span>
+                <span role="columnheader">Practice</span>
+              </div>
+              {analytics.courses.map(({ course, tasks, attendance, grades, practice }) => (
+                <div key={course.id} className={styles.courseTableRow} role="row">
+                  <span role="cell" className={styles.courseName}>
+                    {course.name}
+                  </span>
+                  <span role="cell" className="numeric">
+                    {tasks.completionRate !== undefined ? `${round1(tasks.completionRate)}%` : "—"}
+                  </span>
+                  <span role="cell" className="numeric">
+                    {attendance.attendanceRate !== undefined
+                      ? `${round1(attendance.attendanceRate)}%`
+                      : "—"}
+                  </span>
+                  <span role="cell" className="numeric">
+                    {grades.performancePercent !== undefined
+                      ? `${round1(grades.performancePercent)}%`
+                      : "—"}
+                  </span>
+                  <span role="cell" className="numeric">
+                    {practice.normalizedPercent !== undefined
+                      ? `${round1(practice.normalizedPercent)}%`
+                      : "—"}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section aria-label="Academic insights" className={styles.insightSection}>
+          <h3 className={styles.sectionTitle}>Academic insights</h3>
+          {insights.length === 0 ? (
+            <p className={styles.footnote}>No insights yet — check back once you have more data.</p>
+          ) : (
+            <ul className={styles.insightList}>
+              {insights.slice(0, 6).map((insight) => (
+                <InsightCard key={insight.id} insight={insight} />
+              ))}
             </ul>
           )}
           <p className={styles.footnote}>
-            Example insight framing (a later stage will compute this for real): &ldquo;Units where
-            all study tasks were completed had a higher average practice score.&rdquo; Never phrased
-            as a guarantee that completing tasks causes higher grades.
+            These observations describe patterns in your own recorded data — never a guarantee of
+            future performance, and never a claim that one behavior caused another.
           </p>
         </section>
       </div>

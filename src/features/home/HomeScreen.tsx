@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLiveQuery } from "dexie-react-hooks";
-import { MapPin, X } from "lucide-react";
+import { AlertCircle, Info, MapPin, TrendingUp, X } from "lucide-react";
 import { cn } from "@/lib/classNames";
 import { semesterDb } from "@/data/db";
 import { ScreenHeader } from "@/app/ScreenHeader";
@@ -10,16 +10,25 @@ import { AttendanceControl } from "@/features/shared/AttendanceControl";
 import { TaskRow } from "@/features/shared/TaskRow";
 import { useTasks } from "@/features/shared/useTasks";
 import { useOccurrencesForDates, markAttendance } from "@/features/shared/useSchedule";
+import { useInsights } from "@/features/shared/useAnalytics";
 import { listCourses } from "@/data/repositories/courseRepository";
 import { findCurrentOrNextToday, occurrenceDateTimes } from "@/domain/scheduleOccurrence";
 import { bucketForDate, academicWeekDays } from "@/domain/academicWeek";
 import styles from "./HomeScreen.module.css";
 
+const INSIGHT_ICON = { attention: AlertCircle, positive: TrendingUp, info: Info } as const;
+
 /**
  * Home — answers "what do I need to do, and where am I today?" in under
  * five seconds (STAGE_1A_UX_ARCHITECTURE.md §G). Deliberately excludes
- * charts/analytics/full course grid — those live in Performance/Courses.
- * Fully backed by real repositories (Stage 3) — no fixtures.
+ * charts/full analytics dashboard/full course grid — those live in
+ * Performance/Courses. STAGE_1A_UX_ARCHITECTURE.md §G is explicit that
+ * Home may show "at most one plain-text weekly stat" once there's enough
+ * data to be meaningful, never a chart or widget — Stage 4's single
+ * top-priority insight line (below the task list) is exactly that one
+ * line, sourced from the same deterministic insight engine Performance
+ * uses, never a duplicate of that fuller dashboard.
+ * Fully backed by real repositories (Stage 3/4) — no fixtures.
  */
 export function HomeScreen() {
   const navigate = useNavigate();
@@ -28,6 +37,8 @@ export function HomeScreen() {
   const coursesQuery = useLiveQuery(() => listCourses(), []);
   const courses = useMemo(() => coursesQuery ?? [], [coursesQuery]);
   const courseById = useMemo(() => new Map(courses.map((c) => [c.id, c])), [courses]);
+  const insights = useInsights(1);
+  const topInsight = insights?.[0];
   const [checkInDismissed, setCheckInDismissed] = useState(false);
 
   const now = useMemo(() => new Date(), []);
@@ -148,6 +159,29 @@ export function HomeScreen() {
             View all tasks →
           </Button>
         </section>
+
+        {topInsight && topInsight.category !== "onboarding" && (
+          <button
+            type="button"
+            className={styles.insightLine}
+            onClick={() => navigate("/performance")}
+            aria-label={`${topInsight.message} View Performance for more.`}
+          >
+            {(() => {
+              const Icon = INSIGHT_ICON[topInsight.severity];
+              return (
+                <Icon
+                  size={16}
+                  strokeWidth={1.5}
+                  className={styles.insightIcon}
+                  data-severity={topInsight.severity}
+                  aria-hidden="true"
+                />
+              );
+            })()}
+            <span>{topInsight.message}</span>
+          </button>
+        )}
 
         {!checkInDismissed && (
           <section className={styles.checkIn} aria-label="Weekly check-in prompt">

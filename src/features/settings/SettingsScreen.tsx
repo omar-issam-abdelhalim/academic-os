@@ -124,7 +124,7 @@ export function SettingsScreen() {
 
         <section className={styles.section}>
           <h3 className={styles.sectionTitle}>About</h3>
-          <p className={styles.value}>Academic OS · v0.3.0</p>
+          <p className={styles.value}>Academic OS · v0.4.0</p>
           {storageEstimate && storageEstimate.quota > 0 && (
             <p className={styles.hint}>
               Using {(storageEstimate.usage / (1024 * 1024)).toFixed(1)} MB of{" "}

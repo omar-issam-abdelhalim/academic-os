@@ -1,7 +1,16 @@
 import { useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useLiveQuery } from "dexie-react-hooks";
-import { Plus, ChevronRight, Clock, MapPin, MoreVertical, Pencil, Trash2 } from "lucide-react";
+import {
+  BarChart2,
+  Plus,
+  ChevronRight,
+  Clock,
+  MapPin,
+  MoreVertical,
+  Pencil,
+  Trash2,
+} from "lucide-react";
 import { ScreenHeader } from "@/app/ScreenHeader";
 import {
   IconButton,
@@ -147,6 +156,14 @@ export function CourseDetailScreen() {
               })}
             </div>
           )}
+          <button
+            type="button"
+            className={styles.analyticsLink}
+            onClick={() => navigate(`/performance?course=${course.id}`)}
+          >
+            <BarChart2 size={14} strokeWidth={1.5} aria-hidden="true" /> View analytics for this
+            course →
+          </button>
         </header>
 
         <div className={styles.body}>

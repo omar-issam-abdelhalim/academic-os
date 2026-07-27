@@ -129,6 +129,17 @@
   color: var(--color-text-tertiary);
 }
 
+.analyticsLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  align-self: flex-start;
+  margin-top: var(--space-1);
+  min-height: 36px;
+  color: var(--color-action-primary);
+  font: var(--text-body-small);
+}
+
 .viewAllLink {
   display: inline-flex;
   align-items: center;
