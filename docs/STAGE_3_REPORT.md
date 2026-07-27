@@ -106,11 +106,16 @@ All green locally, verified via the commands in §13, on this Windows developmen
 
 ## 15. GitHub Actions Result
 
-*(To be confirmed after push — see the final chat response for the actual run link/result once verified, per the owner-authorized commit/push in §29 of the task prompt.)*
+Push `717a60c` triggered run [`30232474057`](https://github.com/omar-issam-abdelhalim/academic-os/actions/runs/30232474057) on GitHub Actions. Both jobs passed on the first attempt: `quality` (typecheck, lint, format check, 107/107 unit tests, build, 157/157 E2E — the larger E2E suite genuinely took longer on the runner, 18m13s total for that job) and `deploy` (36s). No follow-up fix commit was needed.
 
 ## 16. Production Deployment Result
 
-*(To be confirmed after push and a green Actions run — see the final chat response.)*
+Verified for real in a live Chromium browser against the actual deployed URL (not `vite preview`, not a simulation):
+
+- The service worker's "A new version of Academic OS is available" update-prompt banner appeared on first load (the browser still had the pre-Stage-3 build active from a previous session); clicking "Refresh to update" correctly activated the new build (`Settings` → About confirms `v0.3.0`).
+- **A real, unexpected-looking observation investigated and resolved, not glossed over**: before refreshing, the stale pre-Stage-3 build rendered several course cards (e.g. "CSAI 101," "Machine Learning Specialization"). This looked like a possible data-loss bug after the refresh (the real, post-refresh Courses list was empty). Direct IndexedDB inspection (`indexedDB.open` + `getAll()` on the `semester`/`courses` stores) confirmed the semester record was genuinely intact and the `courses` store was — and had been — empty; the stale build's course cards were Stage 2's hardcoded fixture data (`CoursesScreen` rendered `fixtureCourses` unconditionally, never reading Dexie at all), not real persisted rows. No data was lost; this was Stage 3's fixture-removal working exactly as intended, mistaken at first glance for a regression. Recorded here rather than silently omitted.
+- **Real create → persist → reload → delete cycle, live in production**: created a course ("Production Verification Course") through the real Add Course dialog; it appeared immediately with a real UUID id in the URL; a **cold navigation** to that deep URL (`/courses/<uuid>`, never visited before in that browser context) rendered the correct Course Detail screen with no console errors — proving both real Dexie persistence and the `404.html` → `githubPagesRedirect.ts` deep-link mechanism still work correctly under Stage 3's route changes. The course was then deleted via the real Course Options menu → "Delete course" → typed confirmation dialog, and confirmed gone after a subsequent fresh reload — leaving production data exactly as found (clean) once verification was complete.
+- No console errors observed across any of the above.
 
 ## 17. Production URL
 
@@ -122,7 +127,10 @@ All green locally, verified via the commands in §13, on this Windows developmen
 
 ## 19. Commit Hashes
 
-*(Recorded in the final chat response after the commit is created — this report is written and committed together with the code in one Stage 3 commit, per the task prompt's own instruction not to leave documentation trailing code changes.)*
+- `717a60c` — `feat: Stage 3 - real Course/Unit/Schedule/Task/Grade/Practice persistence and Semester Export` — the full Stage 3 implementation (89 files changed), pushed to `origin/main` and verified green on GitHub Actions (§15).
+- This report-finalization commit (updating §15/§16/§19 to record the real, now-verified CI/production results) — see the final chat response for its hash.
+
+Both authored solely as `omar-issam-abdelhalim <omar.hq.eg@gmail.com>` — no AI attribution anywhere.
 
 ## 20. Remaining Known Limitations
 
