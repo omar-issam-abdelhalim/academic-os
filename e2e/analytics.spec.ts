@@ -57,9 +57,17 @@ test.describe("Academic analytics golden path", () => {
     await expect(dialog(page)).not.toBeVisible();
     await page.waitForURL("**/tasks");
     for (const title of ["Task A", "Task B"]) {
-      await page
-        .getByRole("checkbox", { name: new RegExp(`mark "${title}" as complete`, "i") })
-        .click();
+      const incompleteCheckbox = page.getByRole("checkbox", {
+        name: new RegExp(`mark "${title}" as complete`, "i"),
+      });
+      await incompleteCheckbox.click();
+      // TaskRow's checked state is driven entirely by the live-query
+      // result (no separate optimistic local state), and a completed
+      // task with no due date moves into the collapsed "Completed"
+      // section — so its "as complete" checkbox actually disappearing
+      // from view *is* the proof the write landed. Never navigate away
+      // before that, or a hard `page.goto` can race ahead of the write.
+      await expect(incompleteCheckbox).not.toBeVisible();
     }
 
     // Attendance: mark today's occurrence as attended.
@@ -75,6 +83,14 @@ test.describe("Academic analytics golden path", () => {
     await page.goto("/schedule");
     await page.locator('[class*="event"]').first().click();
     await dialog(page).getByRole("button", { name: "Attended", exact: true }).click();
+    await expect(dialog(page).getByText("Attended", { exact: true })).toBeVisible();
+    await page.keyboard.press("Escape");
+    // WeekGrid updates its badge from local optimistic state immediately
+    // on click, which does not prove the async markAttendance() write has
+    // actually landed — reload and re-open the event to force a real
+    // Dexie read before trusting it and moving on.
+    await page.reload();
+    await page.locator('[class*="event"]').first().click();
     await expect(dialog(page).getByText("Attended", { exact: true })).toBeVisible();
     await page.keyboard.press("Escape");
 
@@ -126,6 +142,14 @@ test.describe("Academic analytics golden path", () => {
     // --- Modify source data and verify analytics change correctly ---
     await page.goto(`/courses/${courseId}?section=tasks`);
     await page.getByRole("checkbox", { name: /mark "task c" as complete/i }).click();
+    // Wait for the checkbox's own re-render (only happens once the async
+    // toggleTaskCompletion() write resolves and the live query updates)
+    // before navigating away — otherwise a hard `page.goto` doesn't wait
+    // for pending in-page writes and can race ahead of them on a slower
+    // CI runner.
+    await expect(
+      page.getByRole("checkbox", { name: /mark "task c" as incomplete/i }),
+    ).toBeChecked();
     await page.goto("/performance");
     await expect(page.getByText(/3 of 3 tasks completed/)).toBeVisible();
     // The overdue insight must be gone now that nothing is overdue.
