@@ -93,11 +93,33 @@ Ranked `attention > positive > info`; callers slice the ranked list (`Home: 1`, 
 
 ## 11. CI Result
 
-*(Recorded in the final chat response, after push.)*
+The initial Stage 4 commit (`44965db`) failed CI on the Linux runner in `e2e/analytics.spec.ts` — a race condition where the test navigated away (`page.goto`) immediately after clicking a task-completion checkbox, before the async `toggleTaskCompletion()` Dexie write (and, for the earlier Task A/B loop, the live-query-driven collapse into the "Completed" section) had actually resolved. This passed locally (faster machine, cache-warm) but was flaky/failing on the slower CI runner. Fixed in commit `4fc790a` by waiting on the correct DOM signal for each screen context: the global Tasks screen collapses completed no-due-date tasks into a hidden "Completed" section, so the fix waits for the original checkbox to become `not.toBeVisible()`; Course Detail's Tasks section has no such collapsing, so it waits for the "as incomplete" checkbox to become `toBeChecked()`. The attendance-marking step was also hardened with a `page.reload()` + re-open + re-verify, since `WeekGrid`'s badge updates from local optimistic state before the async `markAttendance()` write is guaranteed to have landed.
+
+| Run | Commit | Result | Duration |
+|---|---|---|---|
+| [30287209325](https://github.com/omar-issam-abdelhalim/academic-os/actions/runs/30287209325) | `44965db` | ❌ Failed (E2E race condition) | 18m38s |
+| [30713603389](https://github.com/omar-issam-abdelhalim/academic-os/actions/runs/30713603389) | `4fc790a` | ✅ **Success** — both `Typecheck, lint, test, build` and `Deploy to GitHub Pages` jobs green | 18m53s |
+
+Before pushing the fix, the full local quality gate was re-run and passed clean: `typecheck`, `lint`, `format:check`, `npm test` (151/151), `npm run build`, and both `e2e/analytics.spec.ts` and `e2e/workflow.spec.ts` locally.
 
 ## 12. Production Verification
 
-*(Recorded in the final chat response, after a green CI run — a real create → persist → analyze → modify → re-analyze cycle against the live production URL.)*
+Verified live at https://omar-issam-abdelhalim.github.io/academic-os/ after CI run `30713603389` went green, using real browser automation (not assumptions):
+
+1. Loaded the production URL; the PWA's "new version available" banner appeared (confirming the service worker detected the new deploy) — clicked "Refresh to update" and confirmed no update banner remained afterward.
+2. Confirmed **v0.4.0** via Settings → About (`Academic OS · v0.4.0`).
+3. **Create**: added a real course ("Stage 4 Verification Course"), a task (completed it — collapsed into "Completed (1)"), and a grade entry (Quiz 1, 7/10).
+4. **Analyze**: opened `/performance` and confirmed real, correctly-derived numbers: Task completion 100% (1 of 1), Attendance "No data yet" (not a fabricated 0%), Grades recorded 70% (7/10), Practice "No data yet" (0/0) — trend panels correctly read "Not enough … yet" rather than rendering empty/broken charts, and the insight engine surfaced a factual "not enough grade history" info insight.
+5. **Modify**: added a second grade entry (Quiz 2, 3/10) directly from Course Detail.
+6. **Re-analyze**: returned to `/performance` without reloading and confirmed the change propagated reactively: Grades recorded now read 50% (10/20, correct ratio-of-sums of 7+3 over 10+10, not a naive average of 70%/30%), the grade trend chart rendered both points (70% → 30%) with the caption "Latest: 30%. Not enough history yet for a trend" (correctly declining to classify a trend with only 2 of the required 4 points), the course-comparison table updated to 50%, and the insight engine correctly re-ranked to a "Needs attention — weakest recorded grade performance" insight.
+7. Verified Course Detail's "View analytics for this course →" link navigates to `/performance?course=<id>` with the course pre-selected in the filter dropdown.
+8. Verified Home shows exactly one plain-text insight line (no chart, no widget — per STAGE_1A §G), and that clicking it navigates to `/performance`.
+9. **Stale-cache-vs-real-data check** (per the Stage 3 lesson — never assume, always verify): opened the page's IndexedDB directly (`academic-os-semester` database) and read `courses`, `gradeEntries`, `tasks`, and `taskCompletionEvents` object stores via `getAll()`. Confirmed 1 course, 2 grade entries, 1 task, and 1 completion event — exactly matching what the UI displayed, proving the analytics were computed from genuinely persisted data, not stale cache or in-memory state.
+10. Checked the browser console throughout — zero errors or exceptions.
+11. Reloaded `/performance` (full hard navigation) and confirmed every number and the insight persisted identically.
+12. **Cleanup**: deleted the "Stage 4 Verification Course" test data via Course Detail → Course options → Delete course, restoring the account to its pre-verification (empty) state.
+
+No data-loss ambiguity was observed at any point — every value shown by the UI was independently confirmed against the raw IndexedDB rows.
 
 ## 13. Known Limitations
 
@@ -112,4 +134,4 @@ Consistent with the Stage 4 prompt's own out-of-scope list: notification engine,
 
 ## 15. Final Decision
 
-*(Recorded in the final chat response, after CI/production verification.)*
+**APPROVED.** All Stage 4 acceptance criteria are satisfied: the analytics engine is fully deterministic (no AI/LLM, no randomness, no fixtures), correctly handles empty/sparse data (never a fabricated 0%/NaN/Infinity), the insight engine is bounded and cannot flood, STAGE_1A's UX architecture is preserved on both Home and Course Detail, all local quality gates pass, CI is green on both jobs, and production was verified with a real create → analyze → modify → re-analyze cycle plus direct IndexedDB inspection — with zero console errors and zero data-loss ambiguity. No Stage 3 functionality regressed (full E2E suite re-run clean). Per this prompt's explicit instruction, no Stage 5 work has been started.
