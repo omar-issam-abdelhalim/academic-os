@@ -93,7 +93,7 @@ const scheduleTemplateSchema = z.object({
   id: z.string(),
   courseId: z.string(),
   type: z.string(),
-  dayOfWeek: z.number().min(0).max(6),
+  dayOfWeek: z.number().int().min(0).max(6),
   startTime: z.string(),
   endTime: z.string(),
   location: z.string().optional(),

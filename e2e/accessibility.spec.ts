@@ -122,6 +122,7 @@ test.describe("Automated accessibility scan (axe-core) — spot check, not a ful
     { name: "Courses", path: "/courses" },
     { name: "Settings", path: "/settings" },
     { name: "Tags", path: "/tags" },
+    { name: "Import Semester", path: "/data/import" },
   ];
 
   for (const p of pages) {

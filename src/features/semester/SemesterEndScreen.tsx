@@ -8,16 +8,20 @@ import {
   buildSemesterArchive,
   downloadSemesterArchive,
 } from "@/data/repositories/exportRepository";
+import {
+  buildAndDownloadMediaExport,
+  NoMediaToExportError,
+} from "@/data/repositories/mediaExportRepository";
 import styles from "./SemesterEndScreen.module.css";
 
 /**
  * Semester End → review → Export (STAGE_1A_UX_ARCHITECTURE.md §O). A
  * *reviewing* flow, reachable any time — not gated behind a calendar end
- * date. Export is real (Stage 3): it builds a self-validated JSON archive
- * from the actual semester data and downloads it — it never deletes or
- * modifies anything (PRODUCT_SPEC.md §16). Media export (personal
- * images/handwritten notes, a separate zip) remains explicitly deferred —
- * PRODUCT_SPEC.md §17 marks it a distinct, later feature.
+ * date. Semester Export builds a self-validated JSON archive from the
+ * actual semester data and downloads it; Media Export builds a separate
+ * zip of personal images only. Both are real, fully independent code paths
+ * (PRODUCT_SPEC.md §16/§17) — neither deletes or modifies anything, and
+ * neither is chained to the other or to Start New Semester.
  */
 export function SemesterEndScreen() {
   const semester = useLiveQuery(() => semesterDb.semester.toCollection().first(), []);
@@ -34,6 +38,7 @@ export function SemesterEndScreen() {
     text: string;
   } | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [exportingMedia, setExportingMedia] = useState(false);
 
   async function handleExport() {
     setExporting(true);
@@ -49,6 +54,32 @@ export function SemesterEndScreen() {
       });
     } finally {
       setExporting(false);
+    }
+  }
+
+  async function handleExportMedia() {
+    setExportingMedia(true);
+    setMessage(null);
+    try {
+      const count = await buildAndDownloadMediaExport(semester?.label ?? "semester");
+      setMessage({
+        tone: "success",
+        text: `Media archive downloaded (${count} ${count === 1 ? "image" : "images"}).`,
+      });
+    } catch (error) {
+      if (error instanceof NoMediaToExportError) {
+        setMessage({
+          tone: "info",
+          text: "No personal images to export yet — add an image content block to a unit first.",
+        });
+      } else {
+        setMessage({
+          tone: "danger",
+          text: "Couldn't build the media export. Try again.",
+        });
+      }
+    } finally {
+      setExportingMedia(false);
     }
   }
 
@@ -93,21 +124,19 @@ export function SemesterEndScreen() {
           <Button
             variant="secondary"
             icon={<ImageIcon size={18} strokeWidth={1.5} aria-hidden="true" />}
-            onClick={() =>
-              setMessage({
-                tone: "info",
-                text: "Media export (personal images/handwritten notes) is planned for a later stage — this button is an honest placeholder.",
-              })
-            }
+            onClick={handleExportMedia}
+            loading={exportingMedia}
           >
             Export Media
           </Button>
         </div>
 
         {message && (
-          <StatusBadge tone={message.tone} className={styles.message}>
-            {message.text}
-          </StatusBadge>
+          <div role={message.tone === "danger" ? "alert" : "status"}>
+            <StatusBadge tone={message.tone} className={styles.message}>
+              {message.text}
+            </StatusBadge>
+          </div>
         )}
       </div>
     </div>

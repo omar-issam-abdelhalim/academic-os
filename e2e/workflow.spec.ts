@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { test, expect, type Page } from "@playwright/test";
 import { createSemester } from "./helpers";
 
@@ -242,6 +243,75 @@ test.describe("Semester lifecycle", () => {
     // Export never deletes — the course is still there afterward.
     await page.goto("/courses");
     await expect(page.getByText("Export Test Course")).toBeVisible();
+  });
+
+  test("exporting then importing reproduces the same data, fully replacing the workspace", async ({
+    page,
+  }) => {
+    await createSemester(page);
+    await page.goto("/courses");
+    await page.getByRole("button", { name: "Add course" }).click();
+    await dialog(page).getByLabel("Course name").fill("Import Source Course");
+    await dialog(page).getByRole("button", { name: "Add course" }).click();
+    await page.waitForURL(/\/courses\/.+/);
+
+    await page.goto("/data/export");
+    const [download] = await Promise.all([
+      page.waitForEvent("download"),
+      page.getByRole("button", { name: "Export Semester Archive" }).click(),
+    ]);
+    const archivePath = await download.path();
+    const archiveBuffer = readFileSync(archivePath!);
+
+    // Add unrelated data before importing, to prove Import fully replaces
+    // the workspace rather than merging into whatever was there.
+    await page.goto("/courses");
+    await page.getByRole("button", { name: "Add course" }).click();
+    await dialog(page).getByLabel("Course name").fill("Leftover Course");
+    await dialog(page).getByRole("button", { name: "Add course" }).click();
+    await page.waitForURL(/\/courses\/.+/);
+
+    await page.goto("/data/import");
+    await page.getByLabel("Semester archive file").setInputFiles({
+      name: "export.academic-archive.json",
+      mimeType: "application/json",
+      buffer: archiveBuffer,
+    });
+
+    await expect(page.getByText(/1 course/)).toBeVisible();
+    await page.getByRole("button", { name: "Replace current semester with this archive" }).click();
+    await dialog(page).getByRole("button", { name: "Replace semester" }).click();
+    await page.waitForURL("**/home");
+
+    await page.goto("/courses");
+    await expect(page.getByText("Import Source Course")).toBeVisible();
+    await expect(page.getByText("Leftover Course")).not.toBeVisible();
+  });
+
+  test("rejects a malformed archive with a specific reason and leaves the current semester untouched", async ({
+    page,
+  }) => {
+    await createSemester(page);
+    await page.goto("/courses");
+    await page.getByRole("button", { name: "Add course" }).click();
+    await dialog(page).getByLabel("Course name").fill("Untouched Course");
+    await dialog(page).getByRole("button", { name: "Add course" }).click();
+    await page.waitForURL(/\/courses\/.+/);
+
+    await page.goto("/data/import");
+    await page.getByLabel("Semester archive file").setInputFiles({
+      name: "corrupted.json",
+      mimeType: "application/json",
+      buffer: Buffer.from("{not valid json"),
+    });
+
+    await expect(page.getByRole("alert")).toContainText(/couldn't be read/i);
+    await expect(
+      page.getByRole("button", { name: "Replace current semester with this archive" }),
+    ).not.toBeVisible();
+
+    await page.goto("/courses");
+    await expect(page.getByText("Untouched Course")).toBeVisible();
   });
 
   test("Start New Semester clears courses but preserves global Tags", async ({ page }) => {

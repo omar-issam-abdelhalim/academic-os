@@ -26,8 +26,22 @@ export interface Tag {
   updatedAt: string;
 }
 
-export type TagColor =
-  "slate" | "sage" | "clay" | "amber" | "plum" | "teal" | "rose" | "olive" | "stone";
+/** The 9 curated hues offered by the Tag color picker (see TagsScreen) —
+ * exported as a runtime array too so Import validation can check an
+ * archive's tag colors against the same list rather than duplicating it. */
+export const TAG_COLORS = [
+  "slate",
+  "sage",
+  "clay",
+  "amber",
+  "plum",
+  "teal",
+  "rose",
+  "olive",
+  "stone",
+] as const;
+
+export type TagColor = (typeof TAG_COLORS)[number];
 
 export interface Semester {
   id: string;

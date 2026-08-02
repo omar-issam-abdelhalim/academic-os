@@ -6,6 +6,7 @@ import { Sidebar } from "./Sidebar";
 import { BottomNav } from "./BottomNav";
 import { CommandPalette } from "./CommandPalette";
 import { UpdatePrompt } from "./UpdatePrompt";
+import { ClassReminderBanner } from "./ClassReminderBanner";
 import styles from "./AppShell.module.css";
 
 /** The one responsive shell — desktop gets a persistent sidebar, mobile
@@ -31,6 +32,7 @@ export function AppShell() {
     <div className={styles.shell}>
       <OfflineIndicator />
       <UpdatePrompt />
+      <ClassReminderBanner />
       <div className={styles.body}>
         {isDesktop && <Sidebar onOpenCommandPalette={() => setPaletteOpen(true)} />}
         <main className={styles.content}>

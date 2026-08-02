@@ -15,20 +15,10 @@ import {
 } from "@/components";
 import { useIsDesktop } from "@/hooks/useMediaQuery";
 import { listTags, createTag, deleteTag } from "@/data/repositories/tagRepository";
-import type { TagColor } from "@/types/entities";
+import { TAG_COLORS, type TagColor } from "@/types/entities";
 import styles from "./TagsScreen.module.css";
 
-const CURATED_COLORS: TagColor[] = [
-  "slate",
-  "sage",
-  "clay",
-  "amber",
-  "plum",
-  "teal",
-  "rose",
-  "olive",
-  "stone",
-];
+const CURATED_COLORS: TagColor[] = [...TAG_COLORS];
 
 /**
  * Tags (STAGE_1A_UX_ARCHITECTURE.md §P) — real, working persistence via

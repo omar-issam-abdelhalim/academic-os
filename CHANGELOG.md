@@ -1,8 +1,34 @@
 # Changelog
 
-All notable changes to this project are documented in this file. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this project follows [Semantic Versioning](https://semver.org/) and is pre-1.0 during development (see `docs/DEVELOPMENT.md` §Versioning).
+All notable changes to this project are documented in this file. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this project follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
+
+## [1.0.0] - 2026-08-02
+
+Stage 5 (internal count) / ROADMAP.md's Stage 7: Import, Media Export, a real Notification engine baseline, security hardening, an accessibility pass, and the first genuinely production-ready `1.0.0` release. See `docs/STAGE_5_REPORT.md` for the full report — this is the closing stage of the original roadmap; standard SemVer applies from here on (see `docs/DEVELOPMENT.md` §Versioning).
+
+### Added
+
+- **Import** (`src/features/semester/ImportSemesterScreen.tsx`, `src/data/repositories/importRepository.ts`, `src/domain/archiveImport.ts`): semester archives can now be imported, treated as fully untrusted input throughout — defensive `JSON.parse`, a specific rejection reason for a too-new/too-old `archiveVersion` before generic schema validation runs, the same versioned Zod schema Export already self-validates against, a 50 MB size limit, and allow-listed field-by-field construction of every internal record (never a spread of raw parsed JSON). UX is warn → preview → explicit `ConfirmationDialog` confirm, with "export first" offered as a recommendation, never a forced step. Tags are inserted from the archive's snapshot only if missing locally, never overwriting a locally-renamed tag.
+- **Media Export** (`src/domain/mediaExport.ts`, `src/data/repositories/mediaExportRepository.ts`): a separate, optional zip of personal images only (never `file`/`video` blocks or original course materials), organized `Course/Unit/filename` with per-folder de-duplication, downloaded via the existing Semester End screen's "Export Media" action — independently versioned from the semester archive, never chained with it or with Import/Start New Semester. New runtime dependency: JSZip (already pre-approved in `docs/ARCHITECTURE.md`'s stack table; zero new `npm audit` advisories).
+- **Notification engine baseline** (`src/domain/notifications.ts`, `src/features/shared/useClassReminders.ts`, `src/app/ClassReminderBanner.tsx`): Tier 1 (required) — an in-app, dismissible "class starting soon" banner, rechecked on mount/window-focus/a 30s poll, no platform dependency. Tier 2 (best-effort) — real `Notification` scheduling via `setTimeout` while the tab is open, only once permission is already `"granted"` (requested only in direct response to the user turning Settings' existing "Class reminders" toggle on, never auto-prompted). Both tiers gated behind that one toggle; permission-denied shows one calm, non-repeating inline hint in Settings, never a nagging re-prompt. Tier 3 (true background push) remains explicitly out of scope.
+- Security hardening: `.github/dependabot.yml` (weekly npm + GitHub Actions update PRs), a new `npm audit --audit-level=critical` CI step.
+- Accessibility: `role="alert"`/`role="status"` live-region wrapping for Import/Export result messages; the new Import screen and reminder banner follow the same keyboard/focus/touch-target/no-color-only conventions as the rest of the app.
+- Tests: `mediaExport.test.ts`, `archiveImport.test.ts`, `importRepository.test.ts`, `notifications.test.ts`, `useClassReminders.test.tsx` (34 new Vitest unit/integration tests), plus new Playwright coverage in `workflow.spec.ts` (export → import round-trip, malformed-archive rejection) and the Import screen added to the existing responsive/axe-core spot-check suites.
+
+### Changed
+
+- `src/domain/archive.ts`: `scheduleTemplateSchema`'s `dayOfWeek` now requires an integer (`z.number().int()`), tightening validation now that this schema is a real untrusted-input boundary, not just an export self-check.
+- `src/types/entities.ts`: `TagColor` is now derived from a new exported `TAG_COLORS` runtime array (was a bare string-literal union), so Import's tag-color validation and `TagsScreen`'s curated palette share one source of truth instead of two hand-kept lists.
+- `docs/PRODUCT_SPEC.md`, `docs/DATA_MODEL.md`, `docs/ARCHITECTURE.md`, `docs/SECURITY.md`: Import/Media Export/Notifications moved from "future"/"not yet implemented" to documented, implemented behavior; a documented, consciously-accepted `npm audit` exception recorded for a React Router advisory that doesn't apply to this client-only SPA (no RSC/server/route actions); the CSP `frame-ancestors` gap (already documented) reconfirmed rather than papered over with a no-op meta directive.
+- `package.json`: version `1.0.0`.
+
+### Known limitations
+
+- Imported `file`/`image`/`video` content blocks show metadata only — their binary data was never in the archive to begin with (by design, per PRODUCT_SPEC.md §16), so a fresh, never-stored `blobId` is generated and the existing defensive blob-loading path simply shows no preview/download link. Documented, not a bug.
+- The Notification engine's reminder lead time (10 minutes) is a fixed, hand-picked default, not a per-user configurable setting — PRODUCT_SPEC.md §9 itself calls configurable timing out as future work.
+- Weekly Check-in (`WeeklyCheckIn` table) still has no repository or UI — it was out of this stage's scope per the task prompt, and is called out explicitly rather than silently left implicit.
 
 ## [0.4.0] - 2026-07-27
 

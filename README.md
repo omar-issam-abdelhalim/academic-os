@@ -2,7 +2,7 @@
 
 A premium, local-first academic and learning management Progressive Web App — a personal academic operating system for organizing courses, units, materials, tasks, weekly schedule, attendance, grades, practice performance, analytics, and semester exports.
 
-**Status:** Stage 0 (specification & architecture), Stage 2 (engineering foundation, live UI, PWA, CI), Stage 3 (real Course/Unit/Content/Schedule/Task/Attendance/Grade/Practice persistence and Semester Export, replacing every Stage 2 reference fixture), and Stage 4 (deterministic academic analytics — semester/course metrics, trend analysis, and an explainable insight engine, surfaced in a rebuilt Performance dashboard) are complete. Stage 1A (UX architecture) is approved; Stage 1B (visual design system) established approved token foundations before moving to direct implementation — see [docs/ROADMAP.md](./docs/ROADMAP.md), [docs/STAGE_3_REPORT.md](./docs/STAGE_3_REPORT.md), and [docs/STAGE_4_REPORT.md](./docs/STAGE_4_REPORT.md). Notifications, Import/Media Export, security hardening, and `1.0.0` have not started.
+**Status: `v1.0.0` — production-ready.** Every stage in `docs/ROADMAP.md` is complete: engineering foundation/PWA/CI (Stage 2), real Course/Unit/Content/Schedule/Task/Attendance/Grade/Practice persistence and Semester Export (Stage 3), deterministic academic analytics (Stage 4), and Import/Media Export/a real Notification baseline/security hardening/accessibility pass (Stage 7 — see `docs/STAGE_5_REPORT.md` for the closing report, named for this project's internal execution count). Stage 1A (UX architecture) is approved; Stage 1B (visual design system) established approved token foundations before moving to direct implementation.
 
 ## Quick Start
 
@@ -26,12 +26,13 @@ This repository is documentation-first — read the relevant docs before changin
 3. [docs/DATA_MODEL.md](./docs/DATA_MODEL.md) — entities, relationships, storage architecture
 4. [docs/SECURITY.md](./docs/SECURITY.md) — threat model and privacy commitments
 5. [docs/DEVELOPMENT.md](./docs/DEVELOPMENT.md) — Git workflow, versioning, testing strategy, local dev commands
-6. [docs/ROADMAP.md](./docs/ROADMAP.md) — the staged plan from here to `v1.0.0`
+6. [docs/ROADMAP.md](./docs/ROADMAP.md) — the staged plan, now complete through `v1.0.0`
 7. [docs/STAGE_1A_UX_ARCHITECTURE.md](./docs/STAGE_1A_UX_ARCHITECTURE.md) — approved navigation/IA/user flows
 8. [docs/STAGE_1B_DESIGN_SYSTEM.md](./docs/STAGE_1B_DESIGN_SYSTEM.md) — approved visual foundations (tokens)
 9. [docs/STAGE_2_REPORT.md](./docs/STAGE_2_REPORT.md) — what Stage 2 delivered and what's still a fixture vs. real
 10. [docs/STAGE_3_REPORT.md](./docs/STAGE_3_REPORT.md) — what Stage 3 delivered (real persistence replacing every remaining fixture) and what's still deferred
 11. [docs/STAGE_4_REPORT.md](./docs/STAGE_4_REPORT.md) — the analytics engine: metric definitions, trend rules, insight rules, and what's still deferred
+12. [docs/STAGE_5_REPORT.md](./docs/STAGE_5_REPORT.md) — Import, Media Export, the Notification baseline, security hardening, accessibility, and the `v1.0.0` production release
 
 ## Principles
 
