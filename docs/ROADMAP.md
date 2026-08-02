@@ -50,7 +50,7 @@ Dashboards over the raw data accumulated by Stage 3: task completion, attendance
 </details>
 
 ## Stage 7 — Import, Media Export, Security Hardening & Production v1.0.0
-Semester archive **Import** (with full untrusted-input validation per SECURITY.md — the archive schema and export-time self-validation already exist from Stage 3, ready for Import to consume), separate Media Export, CSP hardening, dependency audit, a full accessibility pass, and the first `1.0.0` production release. (Semester **Export** and "Start New Semester" are already real — delivered in Stage 3 and Stage 2 respectively.) Not started.
+**Status: complete — see `docs/STAGE_5_REPORT.md`** (named "Stage 5" there, this project's internal execution count — see that report's opening section for the explicit stage-numbering mapping back to this document). Semester archive **Import** (full untrusted-input validation per SECURITY.md — consuming the archive schema and export-time self-validation that already existed from Stage 3), a separate **Media Export**, a real **Notification engine baseline** (in-app "starting soon" reminders plus best-effort local `Notification` scheduling — the item originally scoped to Stage 4 and explicitly deferred at that time), CSP/dependency-audit hardening, a full accessibility pass, and the first `1.0.0` production release. (Semester **Export** and "Start New Semester" were already real — delivered in Stage 3 and Stage 2 respectively — and required no rework here.)
 
 ---
 

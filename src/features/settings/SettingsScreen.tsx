@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLiveQuery } from "dexie-react-hooks";
-import { ChevronRight, Download, RotateCcw } from "lucide-react";
+import { AlertTriangle, ChevronRight, Download, RotateCcw, Upload } from "lucide-react";
 import { ScreenHeader } from "@/app/ScreenHeader";
 import { SegmentedControl, Toggle, Divider } from "@/components";
 import { useTheme } from "@/hooks/useTheme";
@@ -27,13 +27,23 @@ export function SettingsScreen() {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [permissionDenied, setPermissionDenied] = useState(false);
   const [storageEstimate, setStorageEstimate] = useState<{ usage: number; quota: number } | null>(
     null,
   );
   const semester = useLiveQuery(() => semesterDb.semester.toCollection().first(), []);
 
   useEffect(() => {
-    getPreferences().then((prefs) => setNotificationsEnabled(prefs.notificationsEnabled));
+    getPreferences().then((prefs) => {
+      setNotificationsEnabled(prefs.notificationsEnabled);
+      if (
+        prefs.notificationsEnabled &&
+        typeof Notification !== "undefined" &&
+        Notification.permission === "denied"
+      ) {
+        setPermissionDenied(true);
+      }
+    });
   }, []);
 
   useEffect(() => {
@@ -47,6 +57,18 @@ export function SettingsScreen() {
   async function handleNotificationsChange(next: boolean) {
     setNotificationsEnabled(next);
     await updatePreferences({ notificationsEnabled: next });
+
+    if (!next || typeof Notification === "undefined") return;
+    // Only ever requested here — in direct response to the user explicitly
+    // turning this on — never automatically on load. If the browser has
+    // already denied it, `requestPermission()` resolves "denied" without
+    // showing any UI, so this can never "nag" with a repeat prompt
+    // (STAGE_1A_UX_ARCHITECTURE.md §T).
+    const result =
+      Notification.permission === "default"
+        ? await Notification.requestPermission()
+        : Notification.permission;
+    setPermissionDenied(result === "denied");
   }
 
   return (
@@ -76,6 +98,20 @@ export function SettingsScreen() {
             Reminders work while Academic OS is open or recently used — not as a guaranteed
             background alarm on every platform. See docs/ARCHITECTURE.md for why.
           </p>
+          {notificationsEnabled && permissionDenied && (
+            <p className={styles.hint}>
+              <AlertTriangle
+                size={14}
+                strokeWidth={1.5}
+                aria-hidden="true"
+                className={styles.hintIcon}
+              />
+              Browser notifications are blocked, so reminders will only show up inside the app
+              itself (never as a system pop-up). Academic OS still works fully — you can allow
+              notifications for this site in your browser's settings if you&rsquo;d like the pop-up
+              too.
+            </p>
+          )}
         </section>
 
         <Divider />
@@ -104,6 +140,16 @@ export function SettingsScreen() {
               aria-hidden="true"
             />
           </button>
+          <button type="button" className={styles.row} onClick={() => navigate("/data/import")}>
+            <Upload size={18} strokeWidth={1.5} aria-hidden="true" />
+            <span className={styles.rowLabel}>Import Semester</span>
+            <ChevronRight
+              size={16}
+              strokeWidth={1.5}
+              className={styles.chevron}
+              aria-hidden="true"
+            />
+          </button>
           <button
             type="button"
             className={`${styles.row} ${styles.danger}`}
@@ -124,7 +170,7 @@ export function SettingsScreen() {
 
         <section className={styles.section}>
           <h3 className={styles.sectionTitle}>About</h3>
-          <p className={styles.value}>Academic OS · v0.4.0</p>
+          <p className={styles.value}>Academic OS · v1.0.0</p>
           {storageEstimate && storageEstimate.quota > 0 && (
             <p className={styles.hint}>
               Using {(storageEstimate.usage / (1024 * 1024)).toFixed(1)} MB of{" "}

@@ -18,6 +18,11 @@ const StartNewSemesterScreen = lazy(() =>
     default: m.StartNewSemesterScreen,
   })),
 );
+const ImportSemesterScreen = lazy(() =>
+  import("@/features/semester/ImportSemesterScreen").then((m) => ({
+    default: m.ImportSemesterScreen,
+  })),
+);
 const TasksScreen = lazy(() =>
   import("@/features/tasks/TasksScreen").then((m) => ({ default: m.TasksScreen })),
 );
@@ -79,6 +84,7 @@ export function AppRoutes() {
             <Route path="more" element={<MoreScreen />} />
             <Route path="tags" element={<TagsScreen />} />
             <Route path="data/export" element={<SemesterEndScreen />} />
+            <Route path="data/import" element={<ImportSemesterScreen />} />
             <Route path="data/new-semester" element={<StartNewSemesterScreen />} />
           </Route>
           <Route path="settings" element={<SettingsScreen />} />

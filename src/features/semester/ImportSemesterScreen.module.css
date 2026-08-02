@@ -1,0 +1,77 @@
+.content {
+  padding: 0 var(--space-4) var(--space-8);
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.notice {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--color-bg-sunken);
+  border-radius: var(--radius-md);
+  font: var(--text-body-default);
+}
+
+.exportReminder {
+  font: var(--text-body-small);
+  color: var(--color-text-secondary);
+}
+
+.exportReminder a {
+  color: var(--color-action-primary);
+}
+
+.dropZone {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  border: 1px dashed var(--color-border-default);
+  border-radius: var(--radius-md);
+}
+
+.fileLabel {
+  font: var(--text-label-default);
+  color: var(--color-text-secondary);
+}
+
+.fileName {
+  font: var(--text-body-default);
+  word-break: break-all;
+}
+
+.summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  background: var(--color-bg-sunken);
+  border-radius: var(--radius-md);
+}
+
+.summaryTitle {
+  font: var(--text-label-default);
+  color: var(--color-text-secondary);
+}
+
+.summaryLine {
+  font: var(--text-body-default);
+}
+
+.warning {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--color-status-danger-subtle);
+  color: var(--color-status-danger);
+  border-radius: var(--radius-md);
+  font: var(--text-body-default);
+}
+
+.message {
+  align-self: flex-start;
+}
