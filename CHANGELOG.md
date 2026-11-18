@@ -4,7 +4,7 @@ All notable changes to this project are documented in this file. Format follows 
 
 ## [Unreleased]
 
-## [1.0.0] - 2026-08-02
+## [1.0.0] - 2026-11-18
 
 Stage 5 (internal count) / ROADMAP.md's Stage 7: Import, Media Export, a real Notification engine baseline, security hardening, an accessibility pass, and the first genuinely production-ready `1.0.0` release. See `docs/STAGE_5_REPORT.md` for the full report — this is the closing stage of the original roadmap; standard SemVer applies from here on (see `docs/DEVELOPMENT.md` §Versioning).
 
@@ -24,15 +24,23 @@ Stage 5 (internal count) / ROADMAP.md's Stage 7: Import, Media Export, a real No
 - `docs/PRODUCT_SPEC.md`, `docs/DATA_MODEL.md`, `docs/ARCHITECTURE.md`, `docs/SECURITY.md`: Import/Media Export/Notifications moved from "future"/"not yet implemented" to documented, implemented behavior; a documented, consciously-accepted `npm audit` exception recorded for a React Router advisory that doesn't apply to this client-only SPA (no RSC/server/route actions); the CSP `frame-ancestors` gap (already documented) reconfirmed rather than papered over with a no-op meta directive.
 - `package.json`: version `1.0.0`.
 
+### Fixed
+
+- Performance trend charts: Y-axis labels (100, 75, 50…) were clipped by a negative chart margin; the axis now has room for three-digit labels.
+
+### Documentation
+
+- README rewritten around the product (live link, features, screenshots, architecture, quality gates); added `docs/STAGE_5_REPORT.md` with this release's verification results.
+
 ### Known limitations
 
 - Imported `file`/`image`/`video` content blocks show metadata only — their binary data was never in the archive to begin with (by design, per PRODUCT_SPEC.md §16), so a fresh, never-stored `blobId` is generated and the existing defensive blob-loading path simply shows no preview/download link. Documented, not a bug.
 - The Notification engine's reminder lead time (10 minutes) is a fixed, hand-picked default, not a per-user configurable setting — PRODUCT_SPEC.md §9 itself calls configurable timing out as future work.
-- Weekly Check-in (`WeeklyCheckIn` table) still has no repository or UI — it was out of this stage's scope per the task prompt, and is called out explicitly rather than silently left implicit.
+- Weekly Check-in (`WeeklyCheckIn` table) still has no repository or UI — it was out of this stage's scope per the stage brief, and is called out explicitly rather than silently left implicit.
 
 ## [0.4.0] - 2026-07-27
 
-Stage 4: deterministic academic analytics — semester/course metrics, trend analysis, and an explainable insight engine, replacing Performance's Stage 3 "real totals only" placeholder with the actual analytics product `docs/ROADMAP.md`'s original Stage 6 described (pulled forward into "Stage 4" by the product owner's task prompt — see `docs/ROADMAP.md` and `docs/STAGE_4_REPORT.md`). Everything is computed client-side from real Stage 3 data; nothing is AI/LLM-generated, random, or fixture-driven. One new runtime dependency (Recharts), already pre-approved in `docs/ARCHITECTURE.md`'s stack table.
+Stage 4: deterministic academic analytics — semester/course metrics, trend analysis, and an explainable insight engine, replacing Performance's Stage 3 "real totals only" placeholder with the actual analytics product `docs/ROADMAP.md`'s original Stage 6 described (pulled forward into "Stage 4" by the product owner's stage brief — see `docs/ROADMAP.md` and `docs/STAGE_4_REPORT.md`). Everything is computed client-side from real Stage 3 data; nothing is AI/LLM-generated, random, or fixture-driven. One new runtime dependency (Recharts), already pre-approved in `docs/ARCHITECTURE.md`'s stack table.
 
 ### Added
 
@@ -124,7 +132,7 @@ Stage 2: engineering foundation, live UI system, PWA, and production pipeline. F
 ### Known limitations
 
 - Course/Unit/Task/Schedule/Grade/Practice remain reference/fixture data — no production CRUD yet (explicit Stage 3 scope).
-- Mobile-width layouts were implemented and code-reviewed but not visually verified in a real narrow viewport this session (tooling limitation, documented in `docs/STAGE_2_REPORT.md`).
+- Mobile-width layouts were implemented and code-reviewed but not visually verified in a real narrow viewport at the time (tooling limitation, documented in `docs/STAGE_2_REPORT.md`).
 
 ## [0.1.1] - 2026-07-26
 
