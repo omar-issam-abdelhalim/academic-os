@@ -6,9 +6,18 @@ updates:
       interval: "weekly"
     open-pull-requests-limit: 10
     groups:
-      dev-dependencies:
+      # Minor and patch updates arrive as two PRs a week instead of one per package.
+      runtime-minor-and-patch:
+        dependency-type: "production"
+        update-types: ["minor", "patch"]
+      dev-minor-and-patch:
         dependency-type: "development"
+        update-types: ["minor", "patch"]
+    # Major versions still arrive one package per PR, so each can be reviewed on its own.
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
+    groups:
+      github-actions:
+        patterns: ["*"]
