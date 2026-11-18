@@ -14,6 +14,15 @@ updates:
         dependency-type: "development"
         update-types: ["minor", "patch"]
     # Major versions still arrive one package per PR, so each can be reviewed on its own.
+    ignore:
+      # Blocked upstream (Nov 2026): eslint-plugin-jsx-a11y does not support ESLint 10,
+      # and typescript-eslint does not support TypeScript 7. Remove these once they do.
+      - dependency-name: "eslint"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@eslint/js"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
