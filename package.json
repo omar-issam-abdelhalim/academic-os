@@ -6,7 +6,7 @@
   "description": "Local-first academic and learning management PWA — a personal academic operating system.",
   "license": "MIT",
   "engines": {
-    "node": ">=20"
+    "node": ">=22.12"
   },
   "scripts": {
     "dev": "vite",
