@@ -11,7 +11,7 @@ Two separate IndexedDB databases via Dexie, deliberately kept apart so a destruc
 1. **`academic-os-preferences`** — app-level **persistent** data that must survive "New Semester": AppPreferences (theme, notification preferences, last-export reminders, onboarding flags) **and the global `Tag` table** (see §Tag below — resolved: Tags are a global, cross-semester taxonomy, not semester-scoped). Small, long-lived, never bulk-deleted by a semester reset.
 2. **`academic-os-semester`** — the single active semester workspace: Semester, Course, Unit, ContentBlock, Blob, Task, TaskCompletionEvent, ScheduleTemplate, ScheduleOccurrence, GradeCategory, GradeEntry, GradeBoundary, PracticeEntry, WeeklyCheckIn. "Start New Semester" deletes/recreates this entire database; `academic-os-preferences` (including Tag definitions) is untouched.
 
-The app operates on **one active semester at a time** (per product spec §15) — there is no in-app multi-semester browsing in v1. This is a **resolved v1 scope decision**, not an open question: history beyond the active semester is preserved *exclusively* by explicit Semester Export (§16); there is no in-app historical-semester browser, and Import (future) is the only path that brings a historical archive's data back into the single active workspace.
+The app operates on **one active semester at a time** (per product spec §15) — there is no in-app multi-semester browsing in v1. This is a **resolved v1 scope decision**, not an open question: history beyond the active semester is preserved *exclusively* by explicit Semester Export (§16); there is no in-app historical-semester browser, and Import (**implemented, Stage 5** — see §"Archive Schema" below and SECURITY.md §3) is the only path that brings a historical archive's data back into the single active workspace.
 
 ### Cross-database references are not enforceable at the database layer
 
@@ -66,7 +66,7 @@ academic-os-semester DB:
 | Field | Notes |
 |---|---|
 | theme | e.g. `system \| light \| dark` |
-| notificationsEnabled | bool — **implemented (Stage 3)** as `AppPreferences.notificationsEnabled`, real persisted state behind Settings' "Class reminders" toggle. Reminder lead-time granularity from the original `notificationPrefs` sketch is not yet implemented — that's still future scheduling-engine work (ARCHITECTURE.md §"Notifications — platform constraints"), not just a preferences-persistence gap. |
+| notificationsEnabled | bool — **implemented (Stage 3)** as `AppPreferences.notificationsEnabled`, real persisted state behind Settings' "Class reminders" toggle; **since Stage 5** this single toggle also gates the real notification engine baseline (`src/domain/notifications.ts` / `useClassReminders.ts` — ARCHITECTURE.md §"Notifications — platform constraints"). Reminder lead-time granularity from the original `notificationPrefs` sketch is still a fixed, hand-picked default (`REMINDER_LEAD_MINUTES = 10`) rather than a per-user configurable setting — an explicit, bounded Stage 5 scope choice (PRODUCT_SPEC.md §9 itself calls configurable timing out as "future"), not an oversight. |
 | hasCompletedOnboarding | bool |
 | lastExportReminderAt | drives a future "you haven't exported in a while" nudge |
 

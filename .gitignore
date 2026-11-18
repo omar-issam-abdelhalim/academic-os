@@ -54,5 +54,6 @@ local-data/
 .tmp/
 .cache/
 
-# --- Local tool config (machine-specific, not project policy) ---
-.claude/settings.local.json
+# --- Local tool and editor settings (root-level hidden folders), except CI config ---
+/.*/
+!/.github/

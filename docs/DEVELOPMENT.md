@@ -1,6 +1,6 @@
 # Development Workflow — Academic OS
 
-> **Source-of-truth scope:** how work actually gets done — Git workflow, versioning, changelog policy, testing strategy, and the documentation rule every future session (human or AI) must follow.
+> **Source-of-truth scope:** how work actually gets done — Git workflow, versioning, changelog policy, testing strategy, and the documentation rule every contributor must follow.
 
 ## Documentation Hierarchy (read this first, every session)
 
@@ -15,15 +15,12 @@ Before implementing anything, read the documents relevant to the change:
 | [ROADMAP.md](./ROADMAP.md) | Staged implementation plan and current stage |
 | This file | Developer workflow itself |
 
-**Rule for future Claude Code sessions (and any contributor):** if a task touches product behavior, data shape, or security-sensitive handling, read the corresponding document *before* writing code, and update it *as part of* the same change if the behavior/shape/threat model changes. Documentation drift is treated as a bug. If an instruction in a task conflicts with one of these documents, surface the conflict rather than silently picking one side.
+**Rule for every contributor:** if a task touches product behavior, data shape, or security-sensitive handling, read the corresponding document *before* writing code, and update it *as part of* the same change if the behavior/shape/threat model changes. Documentation drift is treated as a bug. If an instruction in a task conflicts with one of these documents, surface the conflict rather than silently picking one side.
 
-## Commit Authorship Policy (permanent, do not modify without explicit request)
+## Commit Authorship
 
-- All commits in this repository are authored solely under the project owner's configured Git identity (`user.name`/`user.email`, set repo-locally — never globally by tooling).
-- No AI assistant or tool (Claude, Anthropic, or any other) is ever added as an author or co-author.
-- Commit messages, PR descriptions, README/CHANGELOG/documentation, source files, release notes, and Git/repository metadata must never contain AI attribution lines (e.g. no `Co-Authored-By` for an AI tool, no "Generated with..." footers).
-- GitHub contribution history and commit authorship for this project must reflect only the project owner.
-- Any Claude Code session (or other AI tool) working in this repository must follow this policy automatically, without being reminded, and must not alter the repository's Git identity configuration unless the project owner explicitly requests it.
+- Commits are authored under the project owner's repo-local Git identity (`user.name`/`user.email`), never a global identity set by tooling.
+- Tooling must not change the repository's Git identity configuration.
 
 ## Git Workflow
 

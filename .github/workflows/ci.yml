@@ -33,6 +33,17 @@ jobs:
       - name: Install dependencies (deterministic, lockfile-pinned)
         run: npm ci
 
+      - name: Audit dependencies
+        # Fails the build on critical advisories; high/moderate/low are
+        # surfaced but don't block CI, since a "high" advisory can still be
+        # a documented, consciously-accepted non-applicable risk (see
+        # docs/SECURITY.md §4 — the current example is React Router's
+        # RSC-mode CSRF advisory, irrelevant to this client-only SPA with
+        # no server/RSC/route actions) rather than something fixable by a
+        # version bump alone. Dependabot (.github/dependabot.yml) is the
+        # mechanism that actually drives updates over time.
+        run: npm audit --audit-level=critical
+
       - name: Typecheck
         run: npm run typecheck
 

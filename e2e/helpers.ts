@@ -195,6 +195,7 @@ export const SCREEN_ROUTES: { name: string; path: (ids: SeededIds) => string }[]
   { name: "Settings", path: () => "/settings" },
   { name: "Tags", path: () => "/tags" },
   { name: "Semester End", path: () => "/data/export" },
+  { name: "Import Semester", path: () => "/data/import" },
   { name: "Start New Semester", path: () => "/data/new-semester" },
   { name: "More", path: () => "/more" },
 ];

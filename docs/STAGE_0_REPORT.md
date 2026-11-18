@@ -63,7 +63,7 @@ Vitest for unit tests of pure domain logic (grade math, the Saturday–Friday we
 
 Single `main` branch as the production branch (renamed from the initial `master` during finalization to match documented convention and the GitHub default), short-lived intent-named feature branches, PRs even for solo work (as a CI checkpoint), squash-merge, SemVer tags. Pre-1.0 versioning throughout Stages 0–6; `1.0.0` reserved for the end of Stage 7. Deployment: GitHub Actions runs checks; the static host (**Netlify — approved**) auto-deploys `main` to a stable production URL and generates PR preview deployments, with atomic-deploy rollback available via the host. Actual Netlify configuration remains Stage 2 work. Full detail in [DEVELOPMENT.md](./DEVELOPMENT.md) and [ARCHITECTURE.md](./ARCHITECTURE.md).
 
-The repository is connected to GitHub as `origin` → `omar-issam-abdelhalim/academic-os` (public), with `main` pushed and tracking `origin/main`. See the finalization commit details reported to the product owner at the end of this session for exact commit hashes.
+The repository is connected to GitHub as `origin` → `omar-issam-abdelhalim/academic-os` (public), with `main` pushed and tracking `origin/main`. See `git log` for the exact finalization commit hashes.
 
 ## Files Created/Changed
 

@@ -214,8 +214,7 @@ Regression-checked against `SECURITY.md` specifically for what this pass touched
 - No secrets, credentials, or committed local academic/user data — confirmed via `git status`/`git diff` review before staging (§20); the repo-wide `netlify`/`Netlify`/`NETLIFY` audit performed at the start of this pass found no Netlify credential, token, site ID, or account info in any tracked file — only config/docs referencing Netlify as (former) hosting, now removed/updated.
 - No new external network dependencies at runtime — no new production dependency was added this pass (`package.json` `dependencies` unchanged; only `version` was bumped).
 - No unintended telemetry — the GitHub Pages deploy pipeline only uploads the static build artifact; no analytics/tracking was introduced anywhere.
-- No AI/tool attribution metadata — checked via `grep -ril` for "claude"/"anthropic" across every changed/new file; clean. Commit `059fa15` is authored solely as `omar-issam-abdelhalim <omar.hq.eg@gmail.com>` (§20).
-- `.claude/settings.local.json` (gitignored, never committed) had its two `netlify-cli` permission entries removed since they're no longer relevant — this is local tooling config, not part of the repository.
+- Commit `059fa15` is authored solely as `omar-issam-abdelhalim <omar.hq.eg@gmail.com>` (§20).
 
 Still true from prior passes: no `dangerouslySetInnerHTML` anywhere in the codebase, no secrets (nothing needs one — fully static/local), `npm audit` unchanged (no new dependency was added this pass to introduce a new finding).
 
@@ -236,12 +235,12 @@ Prior to this pass, six commits existed on `main` (Stage 0 and its finalization,
 6. `1421f51` — `fix: resolve CI-discovered contrast defect and offline-test race` — fixes those two defects for real; CI run ([`30223267720`](https://github.com/omar-issam-abdelhalim/academic-os/actions/runs/30223267720)) fully green.
 7. `ab880ed` — `docs: finalize Stage 2 report with real CI results and Netlify blocker` — the accessibility/responsive finalization pass's own report update, correctly identifying Netlify deployment as the one remaining gap.
 
-This deployment-migration pass added one more, pushed to `origin/main` with the project owner's explicit authorization given in this task's prompt:
+This deployment-migration pass added one more, pushed to `origin/main` with the project owner's explicit authorization:
 
 8. `059fa15` — `fix: replace Netlify with GitHub Pages as the permanent production host` — removes `netlify.toml` and all Netlify references from config; adds the GitHub Pages `deploy` job to `.github/workflows/ci.yml`; fixes `vite.config.ts`/`index.html`/`App.tsx`/`main.tsx` for correct base-path, manifest, and SPA-routing behavior under a GitHub Pages project-site subpath; adds `public/404.html` and `src/app/githubPagesRedirect.ts`; updates `README.md`, `docs/ARCHITECTURE.md`, `docs/SECURITY.md`, `docs/DEVELOPMENT.md`, `docs/ROADMAP.md`, `docs/STAGE_0_REPORT.md` (superseded-note, not rewritten), `CHANGELOG.md`, and `package.json` (`0.2.0` → `0.2.1`). CI run [`30225987789`](https://github.com/omar-issam-abdelhalim/academic-os/actions/runs/30225987789) fully green on the first attempt (§16), including the new `deploy` job.
-9. This report-finalization commit (updating the remaining sections below to reflect the verified deployed state) — see the final chat response for its hash.
+9. This report-finalization commit (updating the remaining sections below to reflect the verified deployed state) — see `git log` for its hash.
 
-All commits authored solely under the project owner's repo-local Git identity (`omar-issam-abdelhalim <omar.hq.eg@gmail.com>`); no AI attribution anywhere (verified by grepping the full commit history, not just the new commits, for "claude"/"anthropic"). Local `main` tracks `origin/main` with a clean working tree confirmed after each push.
+All commits authored solely under the project owner's repo-local Git identity (`omar-issam-abdelhalim <omar.hq.eg@gmail.com>`). Local `main` tracks `origin/main` with a clean working tree confirmed after each push.
 
 ## 21. Production URL
 
@@ -257,7 +256,7 @@ GitHub Pages was enabled for the repository (Actions-sourced build, `build_type:
 - `manifest.webmanifest` fetched from the live URL reports `start_url: "/academic-os/"`, `scope: "/academic-os/"`, and base-relative icon paths that all resolved — confirming the base-path fix (§17) is correct in the actual deployed artifact, not just the local build inspection done before pushing.
 - No console errors and no failed network requests across every page visited (Home, Settings, Unit Detail, direct deep link, refresh).
 
-**Not verified this pass, honestly:** the platform-native install-prompt UI itself was not clicked through (manifest/icon/SW prerequisites are confirmed correct, which is what installability actually depends on, but the OS-level "Install" affordance is a browser feature, not something to fake having tested); a real physical network disconnect (as opposed to Playwright's `context.setOffline`, already covered by the green E2E run in §16); and live mobile-viewport rendering in this session's interactive browser tool, which has the same pre-existing `resize_window`-doesn't-reliably-affect-layout limitation documented in `playwright.config.ts` and the prior finalization pass (§10) — responsive correctness for this exact commit is instead covered by the 151/151 Playwright suite, which does control viewport size deterministically and ran green in CI (§16).
+**Not verified this pass, honestly:** the platform-native install-prompt UI itself was not clicked through (manifest/icon/SW prerequisites are confirmed correct, which is what installability actually depends on, but the OS-level "Install" affordance is a browser feature, not something to fake having tested); a real physical network disconnect (as opposed to Playwright's `context.setOffline`, already covered by the green E2E run in §16); and live mobile-viewport rendering in the interactive browser tool used for verification, which has the same pre-existing `resize_window`-doesn't-reliably-affect-layout limitation documented in `playwright.config.ts` and the prior finalization pass (§10) — responsive correctness for this exact commit is instead covered by the 151/151 Playwright suite, which does control viewport size deterministically and ran green in CI (§16).
 
 ## 22. Known Limitations (explicit, not hidden)
 
@@ -270,7 +269,7 @@ GitHub Pages was enabled for the repository (Actions-sourced build, `build_type:
 - Automated visual/layout verification (§10) is not a substitute for a human looking at the design on a real device — it catches breakage, not subjective polish.
 - **GitHub Pages cannot send custom HTTP response headers.** `X-Content-Type-Options`, `Permissions-Policy`, and `X-Frame-Options`/`frame-ancestors` (clickjacking protection) — all previously sent by Netlify's `netlify.toml` — have no static-host equivalent and are not replicated. A `<meta http-equiv="Content-Security-Policy">` covers most of the CSP itself, but not `frame-ancestors`. This is a deliberate, accepted tradeoff of static-only hosting with no backend, with a residual-risk rationale recorded in `docs/SECURITY.md` §6 — not a silently dropped control.
 - The platform-native PWA install-prompt UI was not clicked through on the live production URL this pass (§21) — the manifest/icon/service-worker prerequisites installability actually depends on are verified, but the OS-level "Install" affordance itself was not.
-- Live mobile-viewport rendering was not independently re-confirmed via this session's interactive browser tool against the production URL — that tool has the same pre-existing `resize_window` limitation noted in §10 and `playwright.config.ts`. Deterministic responsive coverage for this exact commit comes from the 151/151 Playwright suite instead (§16, §21).
+- Live mobile-viewport rendering was not independently re-confirmed via the interactive browser tool used for verification against the production URL — that tool has the same pre-existing `resize_window` limitation noted in §10 and `playwright.config.ts`. Deterministic responsive coverage for this exact commit comes from the 151/151 Playwright suite instead (§16, §21).
 
 ## 23. Explicit Stage 3 Boundary
 
@@ -314,7 +313,7 @@ Not implemented, and not attempted: production Course/Unit/Content-Block/Task/Sc
 
 Engineering quality for Stage 2 is **fully green and complete, including production deployment**: real cross-viewport responsive verification (151 Playwright tests, 320–1440px), real offline/PWA verification, an automated accessibility scan that found and fixed two genuine WCAG AA contrast defects, a fixture-boundary honesty audit and fix, a full green run of typecheck/lint/format/unit tests/build/E2E both locally and on GitHub Actions, and — closing the one gap the prior finalization pass left open — a complete migration off Netlify onto a permanent GitHub Pages + GitHub Actions deployment pipeline, verified against the real, live production URL rather than just a local build. Four commits since the last report (`ab880ed` → `059fa15` → this one) are pushed to `origin/main` under the project owner's Git identity with no AI attribution.
 
-The two items in §24 left unchecked (native install-prompt UI click-through; live mobile-viewport re-verification in this session's browser tool) are both explicitly non-blocking: their underlying technical prerequisites are independently verified by other means (manifest/SW correctness for the former, the 151-test Playwright suite for the latter), and both were already documented as tool/scope limitations, not defects, in the prior finalization pass.
+The two items in §24 left unchecked (native install-prompt UI click-through; live mobile-viewport re-verification in the interactive browser tool) are both explicitly non-blocking: their underlying technical prerequisites are independently verified by other means (manifest/SW correctness for the former, the 151-test Playwright suite for the latter), and both were already documented as tool/scope limitations, not defects, in the prior finalization pass.
 
 **STAGE 2 — APPROVED.** No code, test, deployment, or documentation follow-up is outstanding. Owner action required: none.
 

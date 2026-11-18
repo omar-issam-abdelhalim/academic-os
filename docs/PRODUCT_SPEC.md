@@ -126,9 +126,9 @@ The archive preserves structured data needed to reconstruct and analyze the seme
 
 Large original course materials (lecture PDFs/videos) are **not** included in this archive by default — see §17 for personal media. The archive format is versioned (see DATA_MODEL.md §"Archive Schema").
 
-## 17. Media Export (separate, future)
+## 17. Media Export (separate) — implemented (Stage 5)
 
-A second, optional export dedicated to *personal* images the user created (handwritten notes, whiteboard photos, personal diagrams) — not original course-provided PDFs/videos. Conceptual layout:
+A second, optional export dedicated to *personal* images the user created (handwritten notes, whiteboard photos, personal diagrams) — not original course-provided PDFs/videos, and never `file`/`video` content blocks. `src/domain/mediaExport.ts` (planning: path/name derivation, per-folder de-duplication) + `src/data/repositories/mediaExportRepository.ts` (reads live data, builds the zip via JSZip, downloads it) + the "Export Media" action on the Semester End screen. Independently versioned from the semester archive (`MEDIA_EXPORT_VERSION`) and a fully separate code path — never chained with Semester Export, Import, or Start New Semester. Conceptual layout, matched exactly by the real implementation:
 
 ```
 Year-2-Semester-1-Media.zip
@@ -141,9 +141,9 @@ Year-2-Semester-1-Media.zip
       solution.jpg
 ```
 
-## 18. Import (future)
+## 18. Import — implemented (Stage 5)
 
-Semester archives must eventually be importable. Import is treated as **untrusted input**: schema validation, archive-version compatibility/migration, corrupted-archive handling, rejection of invalid/malicious data, and size limits are all required (see SECURITY.md §"Import Threat Model"). Importing a historical archive must never silently destroy the current semester — the safe UX is: warn, confirm, and only replace the active workspace after explicit, unambiguous user confirmation (with the option to export the current semester first).
+Semester archives are importable (`src/features/semester/ImportSemesterScreen.tsx`, Settings → Data → Import Semester). Import is treated as **untrusted input**: schema validation, archive-version compatibility/migration, corrupted-archive handling, rejection of invalid/malicious data, and size limits are all enforced (see SECURITY.md §3). Importing a historical archive never silently destroys the current semester — the file is parsed and validated first (showing a specific rejection reason if it fails, with the current semester left completely untouched), then a summary preview is shown, then an explicit `ConfirmationDialog` is required before anything is replaced. Exporting the current semester first is recommended (a link, not a forced step).
 
 ## 19. New Semester / Clear Data
 

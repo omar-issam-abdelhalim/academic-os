@@ -63,7 +63,7 @@ export function TrendChart({ title, data, trend, color, emptyMessage }: TrendCha
         className={styles.plot}
       >
         <ResponsiveContainer width="100%" height={160}>
-          <LineChart data={data} margin={{ top: 8, right: 12, bottom: 0, left: -20 }}>
+          <LineChart data={data} margin={{ top: 8, right: 12, bottom: 0, left: 0 }}>
             <XAxis
               dataKey="label"
               tick={{ fontSize: 11, fill: "var(--color-text-tertiary)" }}
@@ -75,7 +75,7 @@ export function TrendChart({ title, data, trend, color, emptyMessage }: TrendCha
               tick={{ fontSize: 11, fill: "var(--color-text-tertiary)" }}
               axisLine={false}
               tickLine={false}
-              width={36}
+              width={32}
             />
             <Tooltip
               formatter={(value) => [`${round1(Number(value))}%`, title]}

@@ -1,0 +1,41 @@
+.banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-action-primary-subtle);
+  color: var(--color-action-primary);
+  font: var(--text-body-small);
+}
+
+.icon {
+  flex-shrink: 0;
+}
+
+.message {
+  flex: 1;
+}
+
+.dismiss {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  min-width: 44px;
+  min-height: 44px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+}
+
+.dismiss:hover {
+  background: rgb(0 0 0 / 6%);
+}
+
+.dismiss:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: -2px;
+}
