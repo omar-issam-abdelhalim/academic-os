@@ -17,9 +17,9 @@ The connected Figma workspace (`Omar Issam's team`) is on the **Starter plan**, 
    - `02 — Components`
    - `03 — Screens, States & Handoff`
 2. **1 mode per variable collection.** Native Figma "modes" (the built-in Light/Dark switcher) require a paid tier. Instead, Light and Dark each live in their **own collection** (`Color / Light`, `Color / Dark`), with **identical variable names** across both, so they pair up conceptually and can be merged into two modes of one collection with a single migration step if the team upgrades later.
-3. **MCP tool-call rate limit**, which I hit this session partway through Phase B. Figma work is paused until that resets (typically rolls over on a schedule Anthropic/Figma control — practically, retry in a new session) or the plan is upgraded, which would also resolve constraints 1 and 2.
+3. **Figma API rate limit**, reached partway through Phase B. Figma work paused until the limit reset or the plan was upgraded, which would also resolve constraints 1 and 2.
 
-**Recommendation:** if Academic OS's Figma work is going to continue at the scope this brief describes (full component library + ~22 reference screens with states), a Figma **Professional** seat is worth it — it removes all three constraints above. This is a tooling/budget decision for you, not something I can route around indefinitely with workarounds.
+**Recommendation:** if Academic OS's Figma work is going to continue at the scope this brief describes (full component library + ~22 reference screens with states), a Figma **Professional** seat is worth it — it removes all three constraints above. This is a tooling/budget decision, not something to route around indefinitely with workarounds.
 
 **Figma file:** [Academic OS — Design System](https://www.figma.com/design/G1GJhmankrnJ4CyG1I61Vp) (file key `G1GJhmankrnJ4CyG1I61Vp`)
 

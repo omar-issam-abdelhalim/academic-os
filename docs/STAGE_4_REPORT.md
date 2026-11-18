@@ -1,6 +1,6 @@
 # Stage 4 Report — Academic Analytics, Trends & Actionable Intelligence
 
-> **Status: complete.** This report covers the Stage 4 task prompt's scope — deterministic academic analytics on top of Stage 3's real persistence. See `docs/ROADMAP.md`'s "Stage 4 (continued)" entry for the documented mapping of this work onto the original, more granular roadmap (it pulls the original Stage 6 — Analytics & Semester Intelligence — forward, on the product owner's explicit instruction, the same kind of scope redefinition Stage 3 already documented once).
+> **Status: complete.** This report covers the Stage 4 stage brief's scope — deterministic academic analytics on top of Stage 3's real persistence. See `docs/ROADMAP.md`'s "Stage 4 (continued)" entry for the documented mapping of this work onto the original, more granular roadmap (it pulls the original Stage 6 — Analytics & Semester Intelligence — forward, on the product owner's explicit instruction, the same kind of scope redefinition Stage 3 already documented once).
 
 ## 1. Objective
 
@@ -8,16 +8,16 @@ Convert Academic OS's Performance screen from Stage 3's honest-but-shallow "real
 
 ## 2. Scope Note (documented, not silently improvised)
 
-The Stage 4 task prompt's own §12 ("Course Detail Integration") and §13 ("Home Integration") describe fuller in-context analytics surfaces than `docs/STAGE_1A_UX_ARCHITECTURE.md` — the approved, authoritative UX architecture — actually allows. STAGE_1A is explicit on two points that predate this prompt and were not re-opened by it:
+The Stage 4 stage brief's own §12 ("Course Detail Integration") and §13 ("Home Integration") describe fuller in-context analytics surfaces than `docs/STAGE_1A_UX_ARCHITECTURE.md` — the approved, authoritative UX architecture — actually allows. STAGE_1A is explicit on two points that predate this brief and were not re-opened by it:
 
 - **§G (Home):** "Explicitly NOT on Home: Grade charts, practice charts, attendance percentage widgets, semester trend graphs… Analytics of any kind… At most, once enough data exists, Home may show one plain-text weekly stat… text, not a chart."
 - **§H (Course Detail):** "No Analytics tab inside Course Detail in v1 — course-level trend data lives in the Performance Hub, filterable by course."
 
-Per this prompt's own §1 instruction ("if this prompt conflicts with an established architectural or UX decision from Stages 0–3, preserve the established decision unless changing it is objectively required for correctness"), both are honored as-is: Home gets exactly one plain-text, top-priority insight line (no widget, no chart), and Course Detail gets a link into Performance's course filter rather than its own analytics tab. This reconciliation is recorded here rather than picked silently.
+Per this brief's own §1 instruction ("if this brief conflicts with an established architectural or UX decision from Stages 0–3, preserve the established decision unless changing it is objectively required for correctness"), both are honored as-is: Home gets exactly one plain-text, top-priority insight line (no widget, no chart), and Course Detail gets a link into Performance's course filter rather than its own analytics tab. This reconciliation is recorded here rather than picked silently.
 
 ## 3. Repository Changes
 
-New: `src/domain/analytics/` (8 modules + 8 test files), `src/features/shared/useAnalytics.ts` (+ integration test), `src/features/performance/TrendChart.tsx`, `src/features/performance/InsightCard.tsx` (+ their CSS modules), `e2e/analytics.spec.ts`. Rewritten: `src/features/performance/PerformanceScreen.tsx` (+ CSS). Modified: `src/features/home/HomeScreen.tsx`, `src/features/courses/CourseDetailScreen.tsx` (+ their CSS), `package.json` (Recharts), `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `README.md`, `CHANGELOG.md`, version references. No Stage 3 repository, schema, or domain file was rewritten — Stage 4 is additive on top of Stage 3, per this prompt's own "no regressions" requirement.
+New: `src/domain/analytics/` (8 modules + 8 test files), `src/features/shared/useAnalytics.ts` (+ integration test), `src/features/performance/TrendChart.tsx`, `src/features/performance/InsightCard.tsx` (+ their CSS modules), `e2e/analytics.spec.ts`. Rewritten: `src/features/performance/PerformanceScreen.tsx` (+ CSS). Modified: `src/features/home/HomeScreen.tsx`, `src/features/courses/CourseDetailScreen.tsx` (+ their CSS), `package.json` (Recharts), `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `README.md`, `CHANGELOG.md`, version references. No Stage 3 repository, schema, or domain file was rewritten — Stage 4 is additive on top of Stage 3, per this brief's own "no regressions" requirement.
 
 ## 4. Analytics Architecture
 
@@ -130,8 +130,8 @@ No data-loss ambiguity was observed at any point — every value shown by the UI
 
 ## 14. Explicitly Deferred
 
-Consistent with the Stage 4 prompt's own out-of-scope list: notification engine, AI/LLM integration of any kind, cloud sync, authentication, collaboration features, Import, Media Export, unrelated security hardening, unrelated design-system changes, and anything belonging to a later stage.
+Consistent with the Stage 4 brief's own out-of-scope list: notification engine, AI/LLM integration of any kind, cloud sync, authentication, collaboration features, Import, Media Export, unrelated security hardening, unrelated design-system changes, and anything belonging to a later stage.
 
 ## 15. Final Decision
 
-**APPROVED.** All Stage 4 acceptance criteria are satisfied: the analytics engine is fully deterministic (no AI/LLM, no randomness, no fixtures), correctly handles empty/sparse data (never a fabricated 0%/NaN/Infinity), the insight engine is bounded and cannot flood, STAGE_1A's UX architecture is preserved on both Home and Course Detail, all local quality gates pass, CI is green on both jobs, and production was verified with a real create → analyze → modify → re-analyze cycle plus direct IndexedDB inspection — with zero console errors and zero data-loss ambiguity. No Stage 3 functionality regressed (full E2E suite re-run clean). Per this prompt's explicit instruction, no Stage 5 work has been started.
+**APPROVED.** All Stage 4 acceptance criteria are satisfied: the analytics engine is fully deterministic (no AI/LLM, no randomness, no fixtures), correctly handles empty/sparse data (never a fabricated 0%/NaN/Infinity), the insight engine is bounded and cannot flood, STAGE_1A's UX architecture is preserved on both Home and Course Detail, all local quality gates pass, CI is green on both jobs, and production was verified with a real create → analyze → modify → re-analyze cycle plus direct IndexedDB inspection — with zero console errors and zero data-loss ambiguity. No Stage 3 functionality regressed (full E2E suite re-run clean). Per this brief's explicit instruction, no Stage 5 work has been started.

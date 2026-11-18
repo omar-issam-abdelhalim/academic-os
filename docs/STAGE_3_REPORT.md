@@ -1,6 +1,6 @@
 # Stage 3 Report — Product Completion, Real Workflows & Persistence
 
-> **Status: complete.** This report covers the Stage 3 task prompt's redefined scope — see `docs/ROADMAP.md`'s Stage 3 entry for the documented mapping from that prompt onto this repository's original, more granular staging (old Stages 3–5, plus the Semester Export portion of old Stage 7). No code, test, or documentation follow-up is outstanding within that scope; see §21 for what remains explicitly deferred.
+> **Status: complete.** This report covers the Stage 3 stage brief's redefined scope — see `docs/ROADMAP.md`'s Stage 3 entry for the documented mapping from that brief onto this repository's original, more granular staging (old Stages 3–5, plus the Semester Export portion of old Stage 7). No code, test, or documentation follow-up is outstanding within that scope; see §21 for what remains explicitly deferred.
 
 ## 1. Stage Objective
 
@@ -8,7 +8,7 @@ Convert Academic OS from Stage 2's strong engineering/UI foundation — a live, 
 
 ## 2. Scope Redefinition (documented, not silently improvised)
 
-The Stage 3 task prompt collapsed this repository's original Stage 3 (Courses/Units/Content), Stage 4 (Schedule/Tasks/Attendance — notifications excluded), Stage 5 (Grades/Practice), and the Semester Export portion of Stage 7 (PRODUCT_SPEC.md §16, never marked "future" the way Import and Media Export are) into one pass. This is recorded as a scope decision in `docs/ROADMAP.md`, not invented ad hoc — the original finer-grained staging is preserved there, in a collapsed historical note, as the record of the original plan. Explicitly out of scope for this pass and still pending: the Notification scheduling engine (original Stage 4), Analytics/Semester-Intelligence (original Stage 6), and Import/Media Export/security hardening/`1.0.0` (the remainder of the original Stage 7).
+The Stage 3 stage brief collapsed this repository's original Stage 3 (Courses/Units/Content), Stage 4 (Schedule/Tasks/Attendance — notifications excluded), Stage 5 (Grades/Practice), and the Semester Export portion of Stage 7 (PRODUCT_SPEC.md §16, never marked "future" the way Import and Media Export are) into one pass. This is recorded as a scope decision in `docs/ROADMAP.md`, not invented ad hoc — the original finer-grained staging is preserved there, in a collapsed historical note, as the record of the original plan. Explicitly out of scope for this pass and still pending: the Notification scheduling engine (original Stage 4), Analytics/Semester-Intelligence (original Stage 6), and Import/Media Export/security hardening/`1.0.0` (the remainder of the original Stage 7).
 
 ## 3. Major Features Completed
 
@@ -128,7 +128,7 @@ Verified for real in a live Chromium browser against the actual deployed URL (no
 ## 19. Commit Hashes
 
 - `717a60c` — `feat: Stage 3 - real Course/Unit/Schedule/Task/Grade/Practice persistence and Semester Export` — the full Stage 3 implementation (89 files changed), pushed to `origin/main` and verified green on GitHub Actions (§15).
-- This report-finalization commit (updating §15/§16/§19 to record the real, now-verified CI/production results) — see the final chat response for its hash.
+- This report-finalization commit (updating §15/§16/§19 to record the real, now-verified CI/production results) — see `git log` for its hash.
 
 Both authored solely as `omar-issam-abdelhalim <omar.hq.eg@gmail.com>` — no AI attribution anywhere.
 
@@ -149,11 +149,11 @@ Consistent with §2's scope redefinition:
 - **Import** (original Stage 7): explicitly out of scope per PRODUCT_SPEC.md §18's own "future" marking. The versioned Zod schema and export-time self-validation that Import will need already exist (`src/domain/archive.ts`).
 - **Media Export** (original Stage 7): PRODUCT_SPEC.md §17 marks it "separate, future." The Semester End screen's "Export Media" button honestly says so on click rather than silently doing nothing.
 - **CSP/security hardening pass, dependency audit, full accessibility audit, `1.0.0`** (original Stage 7 remainder): not attempted this pass.
-- **Weekly Check-in** (PRODUCT_SPEC.md §14): not in the Stage 3 task prompt's explicit section list; Home's "Quick check-in" button is honestly disabled with an explanatory `title` rather than silently doing nothing.
+- **Weekly Check-in** (PRODUCT_SPEC.md §14): not in the Stage 3 stage brief's explicit section list; Home's "Quick check-in" button is honestly disabled with an explanatory `title` rather than silently doing nothing.
 
 ## 22. Owner Action Required
 
-None to complete Stage 3 itself. If GitHub Actions or the production deployment surfaces an environment-specific defect after push (per §15/§16 above), that will be fixed and re-verified as part of this same pass before the final chat response, consistent with the task prompt's own instructions — no owner action is needed for that either unless something outside engineering control blocks it (as Netlify authentication did in Stage 2).
+None to complete Stage 3 itself. If GitHub Actions or the production deployment surfaces an environment-specific defect after push (per §15/§16 above), that will be fixed and re-verified as part of this same pass, consistent with the stage brief's own instructions — no owner action is needed for that either unless something outside engineering control blocks it (as Netlify authentication did in Stage 2).
 
 ## 23. Recommendation
 
